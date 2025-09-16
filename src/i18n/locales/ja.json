@@ -1,0 +1,9 @@
+{
+  "plugin.name": "ファイルナビゲーター",
+  "plugin.description": "アクティブなノートを基準に、条件で絞り込んだファイルへ移動します。",
+  "commands.navigateNext": "次のファイルへ移動",
+  "commands.navigatePrevious": "前のファイルへ移動",
+  "commands.navigateLatest": "最新のファイルへ移動",
+  "notices.noActiveFile": "ノートを開いてからファイルナビゲーターを使用してください。",
+  "notices.notImplemented": "ファイル移動ルールがまだ設定されていません。"
+}
