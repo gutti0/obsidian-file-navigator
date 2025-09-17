@@ -125,8 +125,8 @@ class FileNavigatorSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    this.name = this.plugin.translate('settings.tabName');
     containerEl.createEl('h2', { text: this.plugin.translate('settings.title') });
+
     containerEl.createEl('p', { text: this.plugin.translate('settings.description') });
 
     const groupsContainer = containerEl.createDiv({ cls: 'file-navigator-settings__groups' });
@@ -418,5 +418,3 @@ class FileNavigatorSettingTab extends PluginSettingTab {
     return Math.max(...priorities) + 1;
   }
 }
-
-
