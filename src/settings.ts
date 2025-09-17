@@ -1,4 +1,4 @@
-export type RuleFilterType = 'tag' | 'folder';
+export type RuleFilterType = 'tag' | 'folder' | 'property';
 
 export type SortValueType = 'string' | 'number' | 'date';
 
@@ -6,19 +6,19 @@ export type SortType = 'created' | 'modified' | 'filename' | 'frontmatter';
 
 export interface NavigationRuleSetting {
   id: string;
-  name: string;
   filterType: RuleFilterType;
   filterValue: string;
   sortType: SortType;
   sortDirection: 'asc' | 'desc';
   sortValueType?: SortValueType;
   sortKey?: string;
+  propertyKey?: string;
+  propertyValue?: string;
 }
 
 export interface NavigationGroupSetting {
   id: string;
   name: string;
-  priority: number;
   rules: NavigationRuleSetting[];
 }
 

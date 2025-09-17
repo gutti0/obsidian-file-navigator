@@ -40,6 +40,7 @@
 
 - 設定画面（`設定 > ファイルナビゲーター`）からグループを追加し、タグまたはフォルダフィルターと各種ソート条件を GUI で編集できます。 / From `Settings > File Navigator` you can add groups, choose tag or folder filters, and configure sorting options via the GUI.
 - frontmatter で並び替える場合は、キー名と値の型（文字列／数値／日付）を指定します。 / When sorting by frontmatter, provide the key name and its value type (string/number/date).
+- 各グループごとに「前へ／次へ／最新」コマンドが自動登録され、ホットキー設定から個別に割り当てできます。 / Each group registers its own Previous/Next/Latest commands so you can assign hotkeys per group.
 
 ## テスト / Testing
 

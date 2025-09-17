@@ -39,6 +39,12 @@
 
 .file-navigator-settings__add-group,
 .file-navigator-rules__add,
-.file-navigator-rule__remove {
+.file-navigator-group__actions,
+.file-navigator-rule__order {
   margin-top: 12px;
 }
+
+.file-navigator-rule__order .setting-item-control button {
+  margin-right: 6px;
+}
+
