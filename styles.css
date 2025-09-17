@@ -1,1 +1,44 @@
-/* プラグイン固有のスタイルは後で追加する */
+.file-navigator-group {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background-color: var(--background-secondary);
+}
+
+.file-navigator-group__title {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.file-navigator-group__rules {
+  margin-top: 12px;
+  margin-bottom: 12px;
+  padding-left: 8px;
+  border-left: 2px solid var(--background-modifier-border);
+}
+
+.file-navigator-rule {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background-color: var(--background-primary);
+}
+
+.file-navigator-rule__title {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.file-navigator-settings__empty,
+.file-navigator-rules__empty {
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.file-navigator-settings__add-group,
+.file-navigator-rules__add,
+.file-navigator-rule__remove {
+  margin-top: 12px;
+}

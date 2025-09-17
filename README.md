@@ -15,16 +15,16 @@
 
 ### 開発環境 / Development Environment
 
-1.  リポジトリをクローンし、依存関係をインストールします。 / Clone the repository and install dependencies.
+1. リポジトリをクローンし、依存関係をインストールします。 / Clone the repository and install dependencies.
 
         npm install
 
-2.  開発モードでビルドウォッチを開始します。 / Start the development build watcher.
+2. 開発モードでビルドウォッチを開始します。 / Start the development build watcher.
 
         npm run dev
 
-3.  build フォルダを Obsidian のプラグインディレクトリにリンクするかコピーすると、変更が反映されます。 / Symlink or copy the build folder into your Obsidian plugins directory to test changes.
-4.  本番ビルドは次のコマンドで作成できます。 / Create a production build with:
+3. `build/` フォルダを Obsidian のプラグインディレクトリにリンクするかコピーすると、変更が反映されます。 / Symlink or copy the `build/` folder into your Obsidian plugins directory to test changes.
+4. 本番ビルドは次のコマンドで作成できます。 / Create a production build with:
 
         npm run build
 
@@ -36,6 +36,11 @@
 
 ショートカットは Obsidian のホットキー設定から任意に割り当てます。 / Assign shortcuts from Obsidian Hotkeys settings as needed.
 
+## 設定 / Settings
+
+- 設定画面（`設定 > ファイルナビゲーター`）からグループを追加し、タグまたはフォルダフィルターと各種ソート条件を GUI で編集できます。 / From `Settings > File Navigator` you can add groups, choose tag or folder filters, and configure sorting options via the GUI.
+- frontmatter で並び替える場合は、キー名と値の型（文字列／数値／日付）を指定します。 / When sorting by frontmatter, provide the key name and its value type (string/number/date).
+
 ## テスト / Testing
 
 - 単体テストとカバレッジは Vitest を利用します。 / Vitest powers unit tests and coverage.
@@ -44,6 +49,6 @@
 
 ## i18n
 
-- 翻訳文字列は src/i18n/locales 配下の JSON に配置されています。 / Translation strings live in the JSON files under src/i18n/locales.
-- src/i18n/index.ts の Translator が言語の解決と文字列取得を担います。 / Translator in src/i18n/index.ts resolves locales and returns strings.
-- 新しい言語を追加する場合は JSON を追加し、dictionaries に登録してください。 / To add a new language, add a JSON file and register it in the dictionaries map.
+- 翻訳文字列は `src/i18n/locales` 配下の JSON に配置されています。 / Translation strings live in the JSON files under `src/i18n/locales`.
+- `src/i18n/index.ts` の `Translator` が言語の解決と文字列取得を担います。 / `Translator` in `src/i18n/index.ts` resolves locales and returns strings.
+- 新しい言語を追加する場合は JSON を追加し、`dictionaries` に登録してください。 / To add a new language, add a JSON file and register it in the `dictionaries` map.
