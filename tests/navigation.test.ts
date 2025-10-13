@@ -122,6 +122,50 @@ describe('navigation', () => {
     expect(openSpy).toHaveBeenCalledWith(files[1]);
   });
 
+  it('opens the latest file within the rule that contains the active file (multiple rules)', async () => {
+    const files = [
+      // notes group
+      createFile('notes/a.md', 1, 10),
+      createFile('notes/b.md', 5, 50),
+      // tasks group
+      createFile('tasks/1.md', 2, 20),
+      createFile('tasks/2.md', 8, 80)
+    ];
+
+    const { plugin, app, openSpy } = setupPlugin(files);
+
+    const group = {
+      id: 'group-latest-multi',
+      name: 'MultiLatest',
+      rules: [
+        {
+          id: 'rule-notes',
+          filterType: 'folder' as const,
+          filterValue: 'notes',
+          sortType: 'created' as const,
+          sortDirection: 'asc' as const
+        },
+        {
+          id: 'rule-tasks',
+          filterType: 'folder' as const,
+          filterValue: 'tasks',
+          sortType: 'created' as const,
+          sortDirection: 'asc' as const
+        }
+      ]
+    };
+
+    (plugin as unknown as { settings: { groups: typeof group[] } }).settings.groups = [group];
+
+    // アクティブは tasks/1.md（ルール2に一致）
+    app.workspace.setActiveFile(files[2]);
+
+    await (plugin as unknown as { navigate: (g: typeof group, direction: 'previous' | 'next' | 'latest') => Promise<void> }).navigate(group, 'latest');
+
+    // ルール2(tasks)での最新（昇順なら末尾）は tasks/2.md
+    expect(openSpy).toHaveBeenCalledWith(files[3]);
+  });
+
   it('notifies when no candidates match', async () => {
     const files = [createFile('notes/a.md', 1, 1)];
     const { plugin, app, openSpy } = setupPlugin(files);

@@ -179,13 +179,29 @@ export default class FileNavigatorPlugin extends Plugin {
   }
 
   private resolveNavigationTarget(group: NavigationGroupSetting, activeFile: TFile, direction: NavigationDirection): TFile | null {
+    if (direction === 'latest') {
+      // 最新は、まず「アクティブファイルを含む最初のルール」で解決する
+      for (const rule of group.rules) {
+        const candidates = this.sortRuleCandidates(this.collectRuleCandidates(rule), rule);
+        if (candidates.length === 0) {
+          continue;
+        }
+        const currentIndex = candidates.findIndex((item) => item.path === activeFile.path);
+        if (currentIndex === -1) {
+          continue;
+        }
+        // 並び順に応じて最新のインデックスを選ぶ
+        const targetIndex = rule.sortDirection === 'asc' ? candidates.length - 1 : 0;
+        return candidates[targetIndex] ?? null;
+      }
+      return null;
+    }
+
+    // previous/next は「アクティブファイルを含む最初のルール」でのみ前後移動する
     for (const rule of group.rules) {
       const candidates = this.sortRuleCandidates(this.collectRuleCandidates(rule), rule);
       if (candidates.length === 0) {
         continue;
-      }
-      if (direction === 'latest') {
-        return candidates[0];
       }
       const currentIndex = candidates.findIndex((item) => item.path === activeFile.path);
       if (currentIndex === -1) {
