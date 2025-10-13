@@ -10,7 +10,7 @@ import {
   createId
 } from './settings';
 
-export type NavigationDirection = 'previous' | 'next' | 'latest';
+export type NavigationDirection = 'previous' | 'next' | 'latest' | 'oldest';
 
 type GroupCommandDirection = NavigationDirection;
 
@@ -95,7 +95,7 @@ export default class FileNavigatorPlugin extends Plugin {
   private registerGroupCommands(): void {
     for (const group of this.settings.groups) {
       const label = this.getGroupLabel(group);
-      const directions: GroupCommandDirection[] = ['previous', 'next', 'latest'];
+      const directions: GroupCommandDirection[] = ['previous', 'next', 'latest', 'oldest'];
       for (const direction of directions) {
         const command = this.addCommand({
           id: this.getGroupCommandBaseId(group, direction),
@@ -125,7 +125,9 @@ export default class FileNavigatorPlugin extends Plugin {
         ? 'commands.navigatePrevious'
         : direction === 'next'
         ? 'commands.navigateNext'
-        : 'commands.navigateLatest'
+        : direction === 'latest'
+        ? 'commands.navigateLatest'
+        : 'commands.navigateOldest'
     );
     return `${groupLabel} • ${directionLabel}`;
   }
@@ -187,6 +189,14 @@ export default class FileNavigatorPlugin extends Plugin {
           continue;
         }
         const currentIndex = candidates.findIndex((item) => item.path === activeFile.path);
+      if (currentIndex === -1) {
+        continue;
+      }
+      if (direction === 'oldest') {
+        const targetIndex = rule.sortDirection === 'asc' ? 0 : candidates.length - 1;
+        return candidates[targetIndex] ?? null;
+      }
+
         if (currentIndex === -1) {
           continue;
         }
@@ -209,9 +219,9 @@ export default class FileNavigatorPlugin extends Plugin {
         continue;
       }
       if (direction === 'next') {
-        return candidates[(currentIndex + 1) % candidates.length];
+        if (currentIndex -lt candidates.length - 1) {\r\n        return candidates[currentIndex + 1];\r\n      }\r\n      return null;
       }
-      return candidates[(currentIndex - 1 + candidates.length) % candidates.length];
+      if (currentIndex -gt 0) {\r\n        return candidates[currentIndex - 1];\r\n      }\r\n      return null;
     }
     return null;
   }
