@@ -150,7 +150,7 @@ export default class FileNavigatorPlugin extends Plugin {
     return this.getTranslator().t(key);
   }
 
-  private navigate(group: NavigationGroupSetting, direction: NavigationDirection): void {
+  private async navigate(group: NavigationGroupSetting, direction: NavigationDirection): Promise<void> {
     if (group.rules.length === 0) {
       new Notice(this.translate('notices.groupHasNoRules'));
       return;
@@ -162,12 +162,195 @@ export default class FileNavigatorPlugin extends Plugin {
       return;
     }
 
-    this.handleNavigation(group, activeFile, direction);
+    await this.handleNavigation(group, activeFile, direction);
   }
 
-  private handleNavigation(group: NavigationGroupSetting, file: TFile, direction: NavigationDirection): void {
+  private async handleNavigation(group: NavigationGroupSetting, file: TFile, direction: NavigationDirection): Promise<void> {
     console.debug('FileNavigatorPlugin', 'navigate', { group: group.id, direction, file: file.path });
-    new Notice(this.translate('notices.notImplemented'));
+    const target = this.resolveNavigationTarget(group, file, direction);
+    if (!target) {
+      new Notice(this.translate('notices.noCandidateFound'));
+      return;
+    }
+    if (target.path === file.path) {
+      return;
+    }
+    await this.openFile(target);
+  }
+
+  private resolveNavigationTarget(group: NavigationGroupSetting, activeFile: TFile, direction: NavigationDirection): TFile | null {
+    for (const rule of group.rules) {
+      const candidates = this.sortRuleCandidates(this.collectRuleCandidates(rule), rule);
+      if (candidates.length === 0) {
+        continue;
+      }
+      if (direction === 'latest') {
+        return candidates[0];
+      }
+      const currentIndex = candidates.findIndex((item) => item.path === activeFile.path);
+      if (currentIndex === -1) {
+        // アクティブファイルがこのルールの候補に含まれていない場合は次のルールを評価する
+        continue;
+      }
+      if (direction === 'next') {
+        return candidates[(currentIndex + 1) % candidates.length];
+      }
+      return candidates[(currentIndex - 1 + candidates.length) % candidates.length];
+    }
+    return null;
+  }
+
+  private collectRuleCandidates(rule: NavigationRuleSetting): TFile[] {
+    const files = this.app.vault.getMarkdownFiles();
+    return files.filter((file) => this.matchesRule(rule, file));
+  }
+
+  private matchesRule(rule: NavigationRuleSetting, file: TFile): boolean {
+    switch (rule.filterType) {
+      case 'folder':
+        return this.matchesFolder(rule.filterValue, file);
+      case 'property':
+        return this.matchesProperty(rule, file);
+      case 'tag':
+      default:
+        return this.matchesTag(rule.filterValue, file);
+    }
+  }
+
+  private matchesTag(tagValue: string, file: TFile): boolean {
+    const normalized = this.normalizeTag(tagValue);
+    if (!normalized) {
+      return true;
+    }
+    const tags = this.getFileTags(file);
+    return tags.includes(normalized);
+  }
+
+  private matchesFolder(folderValue: string, file: TFile): boolean {
+    const normalized = folderValue?.trim() ?? '';
+    if (!normalized) {
+      return true;
+    }
+    const withoutSlashes = normalized.replace(/^[/\\\\]+|[/\\\\]+$/g, '').toLowerCase();
+    const fileFolder = (file.parent?.path ?? '').toLowerCase();
+    return fileFolder === withoutSlashes || fileFolder.startsWith(`${withoutSlashes}/`);
+  }
+
+  private matchesProperty(rule: NavigationRuleSetting, file: TFile): boolean {
+    const key = rule.propertyKey?.trim();
+    if (!key) {
+      return false;
+    }
+    const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
+    if (!frontmatter || !(key in frontmatter)) {
+      return false;
+    }
+    if (rule.propertyValue && rule.propertyValue.trim().length > 0) {
+      return String(frontmatter[key]) === rule.propertyValue;
+    }
+    return true;
+  }
+
+  private getFileTags(file: TFile): string[] {
+    const cache = this.app.metadataCache.getFileCache(file);
+    const tags = new Set<string>();
+    cache?.tags?.forEach((tag) => {
+      const normalized = this.normalizeTag(tag.tag);
+      if (normalized) {
+        tags.add(normalized);
+      }
+    });
+    const frontmatterTags = cache?.frontmatter?.tags;
+    if (Array.isArray(frontmatterTags)) {
+      frontmatterTags.forEach((value) => {
+        const normalized = this.normalizeTag(String(value));
+        if (normalized) {
+          tags.add(normalized);
+        }
+      });
+    } else if (typeof frontmatterTags === 'string') {
+      frontmatterTags
+        .split(/[,\s]+/)
+        .map((value) => this.normalizeTag(value))
+        .filter((value): value is string => Boolean(value))
+        .forEach((value) => tags.add(value));
+    }
+    return Array.from(tags);
+  }
+
+  private normalizeTag(value: string | undefined | null): string | null {
+    if (!value) {
+      return null;
+    }
+    return value.replace(/^#+/, '').trim().toLowerCase();
+  }
+
+  private sortRuleCandidates(candidates: TFile[], rule: NavigationRuleSetting): TFile[] {
+    const sorted = [...candidates];
+    sorted.sort((a, b) => this.compareFiles(a, b, rule));
+    if (rule.sortDirection === 'desc') {
+      sorted.reverse();
+    }
+    return sorted;
+  }
+
+  private compareFiles(a: TFile, b: TFile, rule: NavigationRuleSetting): number {
+    switch (rule.sortType) {
+      case 'modified':
+        return a.stat.mtime - b.stat.mtime;
+      case 'filename':
+        return a.path.localeCompare(b.path, undefined, { sensitivity: 'base' });
+      case 'frontmatter': {
+        const aValue = this.getFrontmatterSortValue(a, rule);
+        const bValue = this.getFrontmatterSortValue(b, rule);
+        if (aValue === null && bValue === null) {
+          return 0;
+        }
+        if (aValue === null) {
+          return -1;
+        }
+        if (bValue === null) {
+          return 1;
+        }
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return aValue - bValue;
+        }
+        return String(aValue).localeCompare(String(bValue));
+      }
+      case 'created':
+      default:
+        return a.stat.ctime - b.stat.ctime;
+    }
+  }
+
+  private getFrontmatterSortValue(file: TFile, rule: NavigationRuleSetting): string | number | null {
+    const key = rule.sortKey?.trim();
+    if (!key) {
+      return null;
+    }
+    const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
+    if (!frontmatter || !(key in frontmatter)) {
+      return null;
+    }
+    const value = frontmatter[key];
+    switch (rule.sortValueType) {
+      case 'number': {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      }
+      case 'date': {
+        const timestamp = Date.parse(String(value));
+        return Number.isNaN(timestamp) ? null : timestamp;
+      }
+      case 'string':
+      default:
+        return value == null ? null : String(value);
+    }
+  }
+
+  private async openFile(file: TFile): Promise<void> {
+    const leaf = this.app.workspace.getLeaf(false);
+    await leaf.openFile(file);
   }
 
   getGroupLabel(group: NavigationGroupSetting): string {
@@ -281,7 +464,7 @@ class FileNavigatorSettingTab extends PluginSettingTab {
 
   private renderGroup(parent: HTMLElement, group: NavigationGroupSetting): void {
     const groupWrapper = parent.createDiv({ cls: 'file-navigator-group' });
-    groupWrapper.createEl('h3', {
+    const titleEl = groupWrapper.createEl('h3', {
       text: this.plugin.getGroupLabel(group),
       cls: 'file-navigator-group__title'
     });
@@ -290,29 +473,36 @@ class FileNavigatorSettingTab extends PluginSettingTab {
       .setName(this.plugin.translate('settings.group.name'))
       .setDesc(this.plugin.translate('settings.group.nameDesc'));
 
+
+    const hotkeysSetting = new Setting(groupWrapper)
+      .setName(this.plugin.translate('settings.group.hotkeysTitle'));
+
+    let commandDescriptors: GroupCommandDescriptor[] = [];
+    const updateHotkeyDescription = (): void => {
+      commandDescriptors = this.plugin.getGroupCommandDescriptors(group);
+      const fragment = document.createDocumentFragment();
+      commandDescriptors.forEach((descriptor, index) => {
+        fragment.append(descriptor.label);
+        if (index < commandDescriptors.length - 1) {
+          fragment.append(' / ');
+        }
+      });
+      hotkeysSetting.setDesc(fragment);
+    };
+
+    updateHotkeyDescription();
+
     nameSetting.addText((text) => {
       text
         .setPlaceholder(this.plugin.translate('settings.group.namePlaceholder'))
         .setValue(group.name)
         .onChange(async (value) => {
           group.name = value;
+          titleEl.setText(this.plugin.getGroupLabel(group));
+          updateHotkeyDescription();
           await this.plugin.saveSettings();
-          this.display();
         });
     });
-
-    const commandDescriptors = this.plugin.getGroupCommandDescriptors(group);
-    const hotkeysSetting = new Setting(groupWrapper)
-      .setName(this.plugin.translate('settings.group.hotkeysTitle'));
-
-    const hotkeyDescFragment = document.createDocumentFragment();
-    commandDescriptors.forEach((descriptor, index) => {
-      hotkeyDescFragment.append(descriptor.label);
-      if (index < commandDescriptors.length - 1) {
-        hotkeyDescFragment.append(' / ');
-      }
-    });
-    hotkeysSetting.setDesc(hotkeyDescFragment);
 
     hotkeysSetting.addButton((button) => {
       button
@@ -320,6 +510,24 @@ class FileNavigatorSettingTab extends PluginSettingTab {
         .onClick(() => {
           const firstDescriptor = commandDescriptors[0];
           this.plugin.openHotkeySettings(firstDescriptor ? firstDescriptor.label : this.plugin.getGroupLabel(group));
+        });
+    });
+
+    const removeGroupSetting = new Setting(groupWrapper);
+    removeGroupSetting.settingEl.addClass('file-navigator-group__actions');
+    removeGroupSetting
+      .setName(this.plugin.translate('settings.group.remove'))
+      .setDesc(this.plugin.translate('settings.group.removeDesc'));
+
+    removeGroupSetting.addButton((button) => {
+      button
+        .setButtonText('Remove')
+        .setTooltip(this.plugin.translate('settings.group.removeTooltip'))
+        .setWarning()
+        .onClick(async () => {
+          this.plugin.settings.groups = this.plugin.settings.groups.filter((item) => item.id !== group.id);
+          await this.plugin.saveSettings();
+          this.display();
         });
     });
 
@@ -536,7 +744,7 @@ class FileNavigatorSettingTab extends PluginSettingTab {
 
     orderSetting.addButton((button) => {
       button
-        .setButtonText('↑')
+        .setButtonText('Up')
         .setTooltip(this.plugin.translate('settings.rule.moveUp'))
         .setDisabled(isFirst)
         .onClick(async () => {
@@ -546,7 +754,7 @@ class FileNavigatorSettingTab extends PluginSettingTab {
 
     orderSetting.addButton((button) => {
       button
-        .setButtonText('↓')
+        .setButtonText('Down')
         .setTooltip(this.plugin.translate('settings.rule.moveDown'))
         .setDisabled(isLast)
         .onClick(async () => {
@@ -556,7 +764,7 @@ class FileNavigatorSettingTab extends PluginSettingTab {
 
     orderSetting.addButton((button) => {
       button
-        .setButtonText('✕')
+        .setButtonText('Remove')
         .setTooltip(this.plugin.translate('settings.rule.removeButtonTooltip'))
         .setWarning()
         .onClick(async () => {
@@ -579,5 +787,14 @@ class FileNavigatorSettingTab extends PluginSettingTab {
     this.display();
   }
 }
+
+
+
+
+
+
+
+
+
 
 
