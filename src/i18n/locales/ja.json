@@ -79,5 +79,6 @@
   "settings.rule.removeButtonTooltip": "このルールを削除",
   "settings.group.removeDesc": "グループおよび関連ショートカットを削除します。",
   "settings.group.removeTooltip": "グループを削除",
-  "notices.noCandidateFound": "該当するファイルが見つかりませんでした。"
+  "notices.noCandidateFound": "該当するファイルが見つかりませんでした。",
+  "commands.navigateOldest": "最古へ移動"
 }

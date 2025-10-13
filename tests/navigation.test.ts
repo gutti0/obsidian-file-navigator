@@ -61,7 +61,7 @@ describe('navigation', () => {
     expect(__notices).toHaveLength(0);
   });
 
-  it('wraps around when navigating previous', async () => {
+  it('stops at the beginning when navigating previous (no wrap)', async () => {
     const files = [
       createFile('notes/a.md', 1, 10),
       createFile('notes/b.md', 2, 20),
@@ -89,7 +89,8 @@ describe('navigation', () => {
 
     await (plugin as unknown as { navigate: (g: typeof group, direction: 'previous' | 'next' | 'latest') => Promise<void> }).navigate(group, 'previous');
 
-    expect(openSpy).toHaveBeenCalledWith(files[2]);
+    expect(openSpy).not.toHaveBeenCalled();
+    expect(__notices).toContain('No matching file was found for this group.');
   });
 
   it('opens the latest file respecting sort direction', async () => {
@@ -120,6 +121,80 @@ describe('navigation', () => {
     await (plugin as unknown as { navigate: (g: typeof group, direction: 'previous' | 'next' | 'latest') => Promise<void> }).navigate(group, 'latest');
 
     expect(openSpy).toHaveBeenCalledWith(files[1]);
+  });
+
+  it('stops at the end when navigating next (no wrap)', async () => {
+    const files = [
+      createFile('notes/a.md', 1, 10),
+      createFile('notes/b.md', 2, 20)
+    ];
+
+    const { plugin, app, openSpy } = setupPlugin(files);
+
+    const group = {
+      id: 'group-stop-next',
+      name: 'Notes',
+      rules: [
+        {
+          id: 'rule-folder',
+          filterType: 'folder' as const,
+          filterValue: 'notes',
+          sortType: 'created' as const,
+          sortDirection: 'asc' as const
+        }
+      ]
+    };
+
+    (plugin as unknown as { settings: { groups: typeof group[] } }).settings.groups = [group];
+    app.workspace.setActiveFile(files[1]); // 末尾
+
+    await (plugin as unknown as { navigate: (g: typeof group, direction: 'previous' | 'next' | 'latest') => Promise<void> }).navigate(group, 'next');
+
+    expect(openSpy).not.toHaveBeenCalled();
+    expect(__notices).toContain('No matching file was found for this group.');
+  });
+
+  it('opens the oldest file within the rule that contains the active file (multiple rules)', async () => {
+    const files = [
+      // notes group
+      createFile('notes/a.md', 1, 10),
+      createFile('notes/b.md', 5, 50),
+      // tasks group
+      createFile('tasks/1.md', 2, 20),
+      createFile('tasks/2.md', 8, 80)
+    ];
+
+    const { plugin, app, openSpy } = setupPlugin(files);
+
+    const group = {
+      id: 'group-oldest-multi',
+      name: 'MultiOldest',
+      rules: [
+        {
+          id: 'rule-notes',
+          filterType: 'folder' as const,
+          filterValue: 'notes',
+          sortType: 'created' as const,
+          sortDirection: 'asc' as const
+        },
+        {
+          id: 'rule-tasks',
+          filterType: 'folder' as const,
+          filterValue: 'tasks',
+          sortType: 'created' as const,
+          sortDirection: 'asc' as const
+        }
+      ]
+    };
+
+    (plugin as unknown as { settings: { groups: typeof group[] } }).settings.groups = [group];
+
+    // アクティブは tasks/2.md（ルール2に一致）→ 最古は tasks/1.md
+    app.workspace.setActiveFile(files[3]);
+
+    await (plugin as unknown as { navigate: (g: typeof group, direction: 'previous' | 'next' | 'latest' | 'oldest') => Promise<void> }).navigate(group, 'oldest');
+
+    expect(openSpy).toHaveBeenCalledWith(files[2]);
   });
 
   it('opens the latest file within the rule that contains the active file (multiple rules)', async () => {

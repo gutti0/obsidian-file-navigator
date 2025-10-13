@@ -181,52 +181,48 @@ export default class FileNavigatorPlugin extends Plugin {
   }
 
   private resolveNavigationTarget(group: NavigationGroupSetting, activeFile: TFile, direction: NavigationDirection): TFile | null {
+    // latest: アクティブファイルを含む最初のルールで最新を選択
     if (direction === 'latest') {
-      // 最新は、まず「アクティブファイルを含む最初のルール」で解決する
       for (const rule of group.rules) {
         const candidates = this.sortRuleCandidates(this.collectRuleCandidates(rule), rule);
-        if (candidates.length === 0) {
-          continue;
-        }
+        if (candidates.length === 0) continue;
         const currentIndex = candidates.findIndex((item) => item.path === activeFile.path);
-      if (currentIndex === -1) {
-        continue;
-      }
-      if (direction === 'oldest') {
-        const targetIndex = rule.sortDirection === 'asc' ? 0 : candidates.length - 1;
-        return candidates[targetIndex] ?? null;
-      }
-
-        if (currentIndex === -1) {
-          continue;
-        }
-        // 並び順に応じて最新のインデックスを選ぶ
+        if (currentIndex === -1) continue;
         const targetIndex = rule.sortDirection === 'asc' ? candidates.length - 1 : 0;
         return candidates[targetIndex] ?? null;
       }
       return null;
     }
 
-    // previous/next は「アクティブファイルを含む最初のルール」でのみ前後移動する
+    // oldest: アクティブファイルを含む最初のルールで最古を選択
+    if (direction === 'oldest') {
+      for (const rule of group.rules) {
+        const candidates = this.sortRuleCandidates(this.collectRuleCandidates(rule), rule);
+        if (candidates.length === 0) continue;
+        const currentIndex = candidates.findIndex((item) => item.path === activeFile.path);
+        if (currentIndex === -1) continue;
+        const targetIndex = rule.sortDirection === 'asc' ? 0 : candidates.length - 1;
+        return candidates[targetIndex] ?? null;
+      }
+      return null;
+    }
+
+    // previous/next: アクティブファイルを含む最初のルールでのみ前後移動（ループしない）
     for (const rule of group.rules) {
       const candidates = this.sortRuleCandidates(this.collectRuleCandidates(rule), rule);
-      if (candidates.length === 0) {
-        continue;
-      }
+      if (candidates.length === 0) continue;
       const currentIndex = candidates.findIndex((item) => item.path === activeFile.path);
-      if (currentIndex === -1) {
-        // アクティブファイルがこのルールの候補に含まれていない場合は次のルールを評価する
-        continue;
-      }
+      if (currentIndex === -1) continue;
       if (direction === 'next') {
-        if (currentIndex -lt candidates.length - 1) {\r\n        return candidates[currentIndex + 1];\r\n      }\r\n      return null;
+        if (currentIndex >= candidates.length - 1) return null;
+        return candidates[currentIndex + 1];
       }
-      if (currentIndex -gt 0) {\r\n        return candidates[currentIndex - 1];\r\n      }\r\n      return null;
+      // previous
+      if (currentIndex <= 0) return null;
+      return candidates[currentIndex - 1];
     }
     return null;
-  }
-
-  private collectRuleCandidates(rule: NavigationRuleSetting): TFile[] {
+  }  private collectRuleCandidates(rule: NavigationRuleSetting): TFile[] {
     const files = this.app.vault.getMarkdownFiles();
     return files.filter((file) => this.matchesRule(rule, file));
   }
@@ -407,7 +403,7 @@ export default class FileNavigatorPlugin extends Plugin {
 
   getGroupCommandDescriptors(group: NavigationGroupSetting): GroupCommandDescriptor[] {
     const label = this.getGroupLabel(group);
-    const directions: GroupCommandDirection[] = ['previous', 'next', 'latest'];
+    const directions: GroupCommandDirection[] = ['previous', 'next', 'latest', 'oldest'];
     return directions.map((direction) => ({
       direction,
       id: this.getGroupCommandFullId(group, direction),
