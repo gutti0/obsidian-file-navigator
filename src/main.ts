@@ -412,7 +412,7 @@ export default class FileNavigatorPlugin extends Plugin {
   }
 
   // 入力補助: テキストボックスにサジェストを付与
-  private attachTextSuggest(text: TextComponent, getItems: () => string[]): void {
+  attachTextSuggest(text: TextComponent, getItems: () => string[]): void {
     const anyText = text as unknown as { inputEl?: HTMLInputElement };
     const input = anyText.inputEl;
     if (!input) return;
@@ -484,7 +484,7 @@ export default class FileNavigatorPlugin extends Plugin {
     input.addEventListener('blur', onBlur);
   }
 
-  private collectAllTags(): string[] {
+  collectAllTags(): string[] {
     const set = new Set<string>();
     for (const file of this.app.vault.getMarkdownFiles()) {
       const tags = this.app.metadataCache.getFileCache(file)?.tags;
@@ -497,7 +497,7 @@ export default class FileNavigatorPlugin extends Plugin {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }
 
-  private collectAllFolders(): string[] {
+  collectAllFolders(): string[] {
     const set = new Set<string>();
     for (const file of this.app.vault.getMarkdownFiles()) {
       const folder = file.parent?.path?.trim();
@@ -506,7 +506,7 @@ export default class FileNavigatorPlugin extends Plugin {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }
 
-  private collectAllFrontmatterKeys(): string[] {
+  collectAllFrontmatterKeys(): string[] {
     const set = new Set<string>();
     for (const file of this.app.vault.getMarkdownFiles()) {
       const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
@@ -746,7 +746,7 @@ class FileNavigatorSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           });
         // タグ候補のサジェスト
-        this.attachTextSuggest(text, () => this.collectAllTags());
+        this.plugin.attachTextSuggest(text, () => this.plugin.collectAllTags());
       });
     } else if (rule.filterType === 'folder') {
       const filterValueSetting = new Setting(ruleWrapper)
@@ -763,7 +763,7 @@ class FileNavigatorSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           });
         // フォルダ候補のサジェスト
-        this.attachTextSuggest(text, () => this.collectAllFolders());
+        this.plugin.attachTextSuggest(text, () => this.plugin.collectAllFolders());
       });
     } else {
       const propertyKeySetting = new Setting(ruleWrapper)
@@ -780,7 +780,7 @@ class FileNavigatorSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           });
         // フロントマターキーのサジェスト
-        this.attachTextSuggest(text, () => this.collectAllFrontmatterKeys());
+        this.plugin.attachTextSuggest(text, () => this.plugin.collectAllFrontmatterKeys());
       });
 
       const propertyValueSetting = new Setting(ruleWrapper)
@@ -852,7 +852,7 @@ class FileNavigatorSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           });
         // 並び替えキーにも同様のサジェスト
-        this.attachTextSuggest(text, () => this.collectAllFrontmatterKeys());
+        this.plugin.attachTextSuggest(text, () => this.plugin.collectAllFrontmatterKeys());
       });
 
       const valueTypeSetting = new Setting(ruleWrapper)
