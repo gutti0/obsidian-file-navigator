@@ -1,4 +1,4 @@
-import { Notice, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
+import { Notice, Plugin, PluginSettingTab, Setting, TFile, TextComponent } from 'obsidian';
 import { Translator, createTranslator, readAppLocale } from './i18n';
 import {
   FileNavigatorSettings,
@@ -411,6 +411,113 @@ export default class FileNavigatorPlugin extends Plugin {
     }));
   }
 
+  // 入力補助: テキストボックスにサジェストを付与
+  private attachTextSuggest(text: TextComponent, getItems: () => string[]): void {
+    const anyText = text as unknown as { inputEl?: HTMLInputElement };
+    const input = anyText.inputEl;
+    if (!input) return;
+
+    const container = document.createElement('div');
+    container.className = 'file-nav-suggest';
+    container.style.position = 'absolute';
+    container.style.display = 'none';
+    container.style.zIndex = '9999';
+    document.body.appendChild(container);
+
+    const updatePosition = () => {
+      const rect = input.getBoundingClientRect();
+      container.style.left = `${rect.left + window.scrollX}px`;
+      container.style.top = `${rect.bottom + window.scrollY}px`;
+      container.style.minWidth = `${rect.width}px`;
+    };
+
+    const hide = () => {
+      container.style.display = 'none';
+    };
+    const show = () => {
+      updatePosition();
+      container.style.display = 'block';
+    };
+
+    const render = (items: string[]) => {
+      container.innerHTML = '';
+      const ul = document.createElement('ul');
+      ul.className = 'file-nav-suggest__list';
+      for (const item of items.slice(0, 50)) {
+        const li = document.createElement('li');
+        li.className = 'file-nav-suggest__item';
+        li.textContent = item;
+        li.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          input.value = item;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          hide();
+        });
+        ul.appendChild(li);
+      }
+      if (ul.children.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'file-nav-suggest__empty';
+        li.textContent = 'No suggestions';
+        ul.appendChild(li);
+      }
+      container.appendChild(ul);
+    };
+
+    const onInput = () => {
+      const q = input.value.trim().toLowerCase();
+      const items = getItems();
+      const filtered = q ? items.filter((x) => x.toLowerCase().includes(q)) : items;
+      if (filtered.length === 0) {
+        hide();
+        return;
+      }
+      render(filtered);
+      show();
+    };
+
+    const onFocus = () => onInput();
+    const onBlur = () => setTimeout(hide, 100);
+
+    input.addEventListener('input', onInput);
+    input.addEventListener('focus', onFocus);
+    input.addEventListener('blur', onBlur);
+  }
+
+  private collectAllTags(): string[] {
+    const set = new Set<string>();
+    for (const file of this.app.vault.getMarkdownFiles()) {
+      const tags = this.app.metadataCache.getFileCache(file)?.tags;
+      if (!tags) continue;
+      for (const t of tags) {
+        const name = (t.tag || '').replace(/^#/, '').trim();
+        if (name) set.add(name);
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }
+
+  private collectAllFolders(): string[] {
+    const set = new Set<string>();
+    for (const file of this.app.vault.getMarkdownFiles()) {
+      const folder = file.parent?.path?.trim();
+      if (folder) set.add(folder);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }
+
+  private collectAllFrontmatterKeys(): string[] {
+    const set = new Set<string>();
+    for (const file of this.app.vault.getMarkdownFiles()) {
+      const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+      if (!fm) continue;
+      for (const key of Object.keys(fm)) {
+        if (key) set.add(key);
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }
+
   openHotkeySettings(searchTerm: string): void {
     const settingManager = (this.app as unknown as { setting?: { open: () => void; openTabById?: (id: string) => void } }).setting;
     if (!settingManager) {
@@ -638,6 +745,8 @@ class FileNavigatorSettingTab extends PluginSettingTab {
             titleEl.setText(this.plugin.getRuleSummary(rule));
             await this.plugin.saveSettings();
           });
+        // タグ候補のサジェスト
+        this.attachTextSuggest(text, () => this.collectAllTags());
       });
     } else if (rule.filterType === 'folder') {
       const filterValueSetting = new Setting(ruleWrapper)
@@ -653,6 +762,8 @@ class FileNavigatorSettingTab extends PluginSettingTab {
             titleEl.setText(this.plugin.getRuleSummary(rule));
             await this.plugin.saveSettings();
           });
+        // フォルダ候補のサジェスト
+        this.attachTextSuggest(text, () => this.collectAllFolders());
       });
     } else {
       const propertyKeySetting = new Setting(ruleWrapper)
@@ -668,6 +779,8 @@ class FileNavigatorSettingTab extends PluginSettingTab {
             titleEl.setText(this.plugin.getRuleSummary(rule));
             await this.plugin.saveSettings();
           });
+        // フロントマターキーのサジェスト
+        this.attachTextSuggest(text, () => this.collectAllFrontmatterKeys());
       });
 
       const propertyValueSetting = new Setting(ruleWrapper)
@@ -738,6 +851,8 @@ class FileNavigatorSettingTab extends PluginSettingTab {
             rule.sortKey = value;
             await this.plugin.saveSettings();
           });
+        // 並び替えキーにも同様のサジェスト
+        this.attachTextSuggest(text, () => this.collectAllFrontmatterKeys());
       });
 
       const valueTypeSetting = new Setting(ruleWrapper)
