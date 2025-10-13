@@ -78,5 +78,6 @@
   "settings.rule.moveDown": "ルールを下へ移動",
   "settings.rule.removeButtonTooltip": "このルールを削除",
   "settings.group.removeDesc": "グループおよび関連ショートカットを削除します。",
-  "settings.group.removeTooltip": "グループを削除"
+  "settings.group.removeTooltip": "グループを削除",
+  "notices.noCandidateFound": "該当するファイルが見つかりませんでした。"
 }

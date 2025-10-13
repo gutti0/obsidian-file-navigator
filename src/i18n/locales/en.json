@@ -78,5 +78,6 @@
   "settings.rule.moveDown": "Move rule down",
   "settings.rule.removeButtonTooltip": "Remove this rule",
   "settings.group.removeDesc": "Delete this group and its commands.",
-  "settings.group.removeTooltip": "Remove group"
+  "settings.group.removeTooltip": "Remove group",
+  "notices.noCandidateFound": "No matching file was found for this group."
 }
