@@ -443,7 +443,8 @@ export default class FileNavigatorPlugin extends Plugin {
       container.innerHTML = '';
       const ul = document.createElement('ul');
       ul.className = 'file-nav-suggest__list';
-      for (const item of items.slice(0, 50)) {
+      const MAX = 10000; // 実質上限なし（安全のため上限は高めに）
+      for (const item of items.slice(0, MAX)) {
         const li = document.createElement('li');
         li.className = 'file-nav-suggest__item';
         li.textContent = item;
@@ -525,14 +526,24 @@ export default class FileNavigatorPlugin extends Plugin {
     }
     settingManager.open?.();
     settingManager.openTabById?.('hotkeys');
-    window.setTimeout(() => {
-      const searchInput = document.querySelector('input.setting-search-input') as HTMLInputElement | null;
+    // ホットキー設定の検索欄が生成されるまでポーリングし、入力を設定
+    const trySet = (attempts: number) => {
+      const inputCandidates: (HTMLInputElement | null)[] = [
+        document.querySelector('input.setting-search-input') as HTMLInputElement | null,
+        document.querySelector('input[type="search"]') as HTMLInputElement | null
+      ];
+      const searchInput = inputCandidates.find(Boolean) ?? null;
       if (searchInput) {
         searchInput.focus();
         searchInput.value = searchTerm;
-        searchInput.dispatchEvent(new Event('input'));
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        return;
       }
-    }, 200);
+      if (attempts > 0) {
+        window.setTimeout(() => trySet(attempts - 1), 200);
+      }
+    };
+    trySet(10);
   }
 }
 
@@ -598,19 +609,18 @@ class FileNavigatorSettingTab extends PluginSettingTab {
       text: this.plugin.getGroupLabel(group),
       cls: 'file-navigator-group__title'
     });
+    // インライン編集用の入力（タイトルの位置に出すため、アクションより先に配置）
+    const nameInput = headerEl.createEl('input', { type: 'text', cls: 'file-navigator-group__name-input' });
+    nameInput.placeholder = this.plugin.translate('settings.group.namePlaceholder');
+    nameInput.value = group.name ?? '';
+    nameInput.style.display = 'none';
     const headerActions = headerEl.createDiv({ cls: 'file-navigator-group__header-actions' });
     // 編集トグルボタン
     const editBtn = headerActions.createEl('button', { text: '✎', cls: 'clickable-icon' });
     editBtn.setAttr('aria-label', 'Edit');
     // 削除ボタン（右上）
-    const removeBtn = headerActions.createEl('button', { text: '🗑', cls: 'clickable-icon warning' });
+    const removeBtn = headerActions.createEl('button', { text: '🗑', cls: 'clickable-icon subtle-danger' });
     removeBtn.setAttr('aria-label', this.plugin.translate('settings.group.removeTooltip'));
-
-    // インライン編集用の入力
-    const nameInput = headerEl.createEl('input', { type: 'text', cls: 'file-navigator-group__name-input' });
-    nameInput.placeholder = this.plugin.translate('settings.group.namePlaceholder');
-    nameInput.value = group.name ?? '';
-    nameInput.style.display = 'none';
 
     const enterEdit = () => {
       titleEl.style.display = 'none';

@@ -69,6 +69,8 @@
 .file-navigator-rule__header-actions{display:flex;gap:6px}
 
 /* Icon buttons */
-.clickable-icon{background:var(--background-modifier-hover);border:1px solid var(--background-modifier-border);border-radius:6px;padding:4px 6px;cursor:pointer}
-.clickable-icon.warning{background:var(--background-modifier-error);color:var(--text-on-accent)}
+.clickable-icon{background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:6px;padding:4px 6px;cursor:pointer;color:var(--text-muted)}
+.clickable-icon:hover{background:var(--background-modifier-hover);color:var(--text-normal)}
+.clickable-icon.subtle-danger{border-color:var(--color-red); color:var(--color-red)}
+.clickable-icon.subtle-danger:hover{background:color-mix(in srgb, var(--color-red) 10%, transparent)}
 
