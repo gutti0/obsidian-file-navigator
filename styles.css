@@ -56,3 +56,19 @@
 .file-nav-suggest__item:hover { background: var(--background-modifier-hover); }
 .file-nav-suggest__empty { padding: 6px 10px; color: var(--text-muted); }
 
+
+/* Group header inline edit */
+.file-navigator-group__header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.file-navigator-group__title{margin:0}
+.file-navigator-group__header-actions{display:flex;gap:6px}
+.file-navigator-group__name-input{font:inherit;padding:6px 8px;border:1px solid var(--background-modifier-border);border-radius:6px;}
+
+/* Rule header */
+.file-navigator-rule__header{display:flex;align-items:center;justify-content:flex-end}
+.file-navigator-rule__title.sr-only{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+.file-navigator-rule__header-actions{display:flex;gap:6px}
+
+/* Icon buttons */
+.clickable-icon{background:var(--background-modifier-hover);border:1px solid var(--background-modifier-border);border-radius:6px;padding:4px 6px;cursor:pointer}
+.clickable-icon.warning{background:var(--background-modifier-error);color:var(--text-on-accent)}
+

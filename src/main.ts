@@ -593,14 +593,48 @@ class FileNavigatorSettingTab extends PluginSettingTab {
 
   private renderGroup(parent: HTMLElement, group: NavigationGroupSetting): void {
     const groupWrapper = parent.createDiv({ cls: 'file-navigator-group' });
-    const titleEl = groupWrapper.createEl('h3', {
+    const headerEl = groupWrapper.createDiv({ cls: 'file-navigator-group__header' });
+    const titleEl = headerEl.createEl('h3', {
       text: this.plugin.getGroupLabel(group),
       cls: 'file-navigator-group__title'
     });
+    const headerActions = headerEl.createDiv({ cls: 'file-navigator-group__header-actions' });
+    // 編集トグルボタン
+    const editBtn = headerActions.createEl('button', { text: '✎', cls: 'clickable-icon' });
+    editBtn.setAttr('aria-label', 'Edit');
+    // 削除ボタン（右上）
+    const removeBtn = headerActions.createEl('button', { text: '🗑', cls: 'clickable-icon warning' });
+    removeBtn.setAttr('aria-label', this.plugin.translate('settings.group.removeTooltip'));
 
-    const nameSetting = new Setting(groupWrapper)
-      .setName(this.plugin.translate('settings.group.name'))
-      .setDesc(this.plugin.translate('settings.group.nameDesc'));
+    // インライン編集用の入力
+    const nameInput = headerEl.createEl('input', { type: 'text', cls: 'file-navigator-group__name-input' });
+    nameInput.placeholder = this.plugin.translate('settings.group.namePlaceholder');
+    nameInput.value = group.name ?? '';
+    nameInput.style.display = 'none';
+
+    const enterEdit = () => {
+      titleEl.style.display = 'none';
+      nameInput.style.display = '';
+      nameInput.focus();
+      nameInput.select();
+    };
+    const exitEdit = async (commit: boolean) => {
+      if (commit) {
+        group.name = nameInput.value;
+        titleEl.setText(this.plugin.getGroupLabel(group));
+        updateHotkeyDescription();
+        await this.plugin.saveSettings();
+      }
+      nameInput.style.display = 'none';
+      titleEl.style.display = '';
+    };
+    editBtn.addEventListener('click', () => enterEdit());
+    titleEl.addEventListener('dblclick', () => enterEdit());
+    nameInput.addEventListener('blur', () => void exitEdit(true));
+    nameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') void exitEdit(true);
+      if (e.key === 'Escape') void exitEdit(false);
+    });
 
 
     const hotkeysSetting = new Setting(groupWrapper)
@@ -621,18 +655,6 @@ class FileNavigatorSettingTab extends PluginSettingTab {
 
     updateHotkeyDescription();
 
-    nameSetting.addText((text) => {
-      text
-        .setPlaceholder(this.plugin.translate('settings.group.namePlaceholder'))
-        .setValue(group.name)
-        .onChange(async (value) => {
-          group.name = value;
-          titleEl.setText(this.plugin.getGroupLabel(group));
-          updateHotkeyDescription();
-          await this.plugin.saveSettings();
-        });
-    });
-
     hotkeysSetting.addButton((button) => {
       button
         .setButtonText(this.plugin.translate('settings.group.hotkeysButton'))
@@ -642,22 +664,10 @@ class FileNavigatorSettingTab extends PluginSettingTab {
         });
     });
 
-    const removeGroupSetting = new Setting(groupWrapper);
-    removeGroupSetting.settingEl.addClass('file-navigator-group__actions');
-    removeGroupSetting
-      .setName(this.plugin.translate('settings.group.remove'))
-      .setDesc(this.plugin.translate('settings.group.removeDesc'));
-
-    removeGroupSetting.addButton((button) => {
-      button
-        .setButtonText('Remove')
-        .setTooltip(this.plugin.translate('settings.group.removeTooltip'))
-        .setWarning()
-        .onClick(async () => {
-          this.plugin.settings.groups = this.plugin.settings.groups.filter((item) => item.id !== group.id);
-          await this.plugin.saveSettings();
-          this.display();
-        });
+    removeBtn.addEventListener('click', async () => {
+      this.plugin.settings.groups = this.plugin.settings.groups.filter((item) => item.id !== group.id);
+      await this.plugin.saveSettings();
+      this.display();
     });
 
     const rulesContainer = groupWrapper.createDiv({ cls: 'file-navigator-group__rules' });
@@ -699,9 +709,18 @@ class FileNavigatorSettingTab extends PluginSettingTab {
 
   private renderRule(container: HTMLElement, group: NavigationGroupSetting, rule: NavigationRuleSetting): void {
     const ruleWrapper = container.createDiv({ cls: 'file-navigator-rule' });
-    const titleEl = ruleWrapper.createEl('h4', {
+    const header = ruleWrapper.createDiv({ cls: 'file-navigator-rule__header' });
+    const titleEl = header.createEl('div', {
       text: this.plugin.getRuleSummary(rule),
-      cls: 'file-navigator-rule__title'
+      cls: 'file-navigator-rule__title sr-only'
+    });
+    const headerActions = header.createDiv({ cls: 'file-navigator-rule__header-actions' });
+    const removeIconBtn = headerActions.createEl('button', { text: '🗑', cls: 'clickable-icon warning' });
+    removeIconBtn.setAttr('aria-label', this.plugin.translate('settings.rule.removeButtonTooltip'));
+    removeIconBtn.addEventListener('click', async () => {
+      group.rules = group.rules.filter((item) => item.id !== rule.id);
+      await this.plugin.saveSettings();
+      this.display();
     });
 
     const filterSetting = new Setting(ruleWrapper)
@@ -899,17 +918,7 @@ class FileNavigatorSettingTab extends PluginSettingTab {
         });
     });
 
-    orderSetting.addButton((button) => {
-      button
-        .setButtonText('Remove')
-        .setTooltip(this.plugin.translate('settings.rule.removeButtonTooltip'))
-        .setWarning()
-        .onClick(async () => {
-          group.rules = group.rules.filter((item) => item.id !== rule.id);
-          await this.plugin.saveSettings();
-          this.display();
-        });
-    });
+    // 削除はヘッダー右上アイコンに移動
   }
 
   private async moveRule(group: NavigationGroupSetting, rule: NavigationRuleSetting, delta: number): Promise<void> {
