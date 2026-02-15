@@ -519,31 +519,21 @@ export default class FileNavigatorPlugin extends Plugin {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }
 
-  openHotkeySettings(searchTerm: string): void {
+  openHotkeySettings(_searchTerm: string): void {
+    // Obsidian標準コマンドでホットキー設定を開く（最も互換性が高い）
+    const commandsApi = (this.app as unknown as { commands?: { executeCommandById?: (id: string) => boolean } }).commands;
+    const openedByCommand = commandsApi?.executeCommandById?.('app:open-hotkeys') ?? false;
+    if (openedByCommand) {
+      return;
+    }
+
+    // フォールバック：設定画面を開いてホットキータブへ遷移
     const settingManager = (this.app as unknown as { setting?: { open: () => void; openTabById?: (id: string) => void } }).setting;
     if (!settingManager) {
       return;
     }
     settingManager.open?.();
     settingManager.openTabById?.('hotkeys');
-    // ホットキー設定の検索欄が生成されるまでポーリングし、入力を設定
-    const trySet = (attempts: number) => {
-      const inputCandidates: (HTMLInputElement | null)[] = [
-        document.querySelector('input.setting-search-input') as HTMLInputElement | null,
-        document.querySelector('input[type="search"]') as HTMLInputElement | null
-      ];
-      const searchInput = inputCandidates.find(Boolean) ?? null;
-      if (searchInput) {
-        searchInput.focus();
-        searchInput.value = searchTerm;
-        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-        return;
-      }
-      if (attempts > 0) {
-        window.setTimeout(() => trySet(attempts - 1), 200);
-      }
-    };
-    trySet(10);
   }
 }
 
