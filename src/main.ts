@@ -519,21 +519,46 @@ export default class FileNavigatorPlugin extends Plugin {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }
 
-  openHotkeySettings(_searchTerm: string): void {
+  openHotkeySettings(searchTerm: string): void {
     // Obsidian標準コマンドでホットキー設定を開く（最も互換性が高い）
     const commandsApi = (this.app as unknown as { commands?: { executeCommandById?: (id: string) => boolean } }).commands;
-    const openedByCommand = commandsApi?.executeCommandById?.('app:open-hotkeys') ?? false;
-    if (openedByCommand) {
-      return;
-    }
+    commandsApi?.executeCommandById?.('app:open-hotkeys');
 
     // フォールバック：設定画面を開いてホットキータブへ遷移
     const settingManager = (this.app as unknown as { setting?: { open: () => void; openTabById?: (id: string) => void } }).setting;
-    if (!settingManager) {
-      return;
+    if (settingManager) {
+      settingManager.open?.();
+      settingManager.openTabById?.('hotkeys');
     }
-    settingManager.open?.();
-    settingManager.openTabById?.('hotkeys');
+
+    // 設定検索ではなく、ホットキー画面の検索欄へ条件を入れる
+    const applySearchTerm = (attempts: number): void => {
+      const inputCandidates = Array.from(document.querySelectorAll('input')).filter((input): input is HTMLInputElement => {
+        if (!(input instanceof HTMLInputElement)) return false;
+        const placeholder = input.placeholder?.toLowerCase() ?? '';
+        const ariaLabel = (input.getAttribute('aria-label') ?? '').toLowerCase();
+        const className = input.className?.toLowerCase() ?? '';
+        return (
+          input.type === 'search' ||
+          className.includes('hotkey') ||
+          placeholder.includes('hotkey') ||
+          ariaLabel.includes('hotkey')
+        );
+      });
+      const searchInput = inputCandidates[0] ?? null;
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.value = searchTerm;
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        searchInput.dispatchEvent(new Event('change', { bubbles: true }));
+        return;
+      }
+      if (attempts > 0) {
+        window.setTimeout(() => applySearchTerm(attempts - 1), 100);
+      }
+    };
+
+    window.setTimeout(() => applySearchTerm(30), 100);
   }
 }
 
@@ -659,8 +684,7 @@ class FileNavigatorSettingTab extends PluginSettingTab {
       button
         .setButtonText(this.plugin.translate('settings.group.hotkeysButton'))
         .onClick(() => {
-          const firstDescriptor = commandDescriptors[0];
-          this.plugin.openHotkeySettings(firstDescriptor ? firstDescriptor.label : this.plugin.getGroupLabel(group));
+          this.plugin.openHotkeySettings('File Navigator: Home');
         });
     });
 
