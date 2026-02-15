@@ -619,7 +619,7 @@ class FileNavigatorSettingTab extends PluginSettingTab {
     const editBtn = headerActions.createEl('button', { text: '✎', cls: 'clickable-icon' });
     editBtn.setAttr('aria-label', 'Edit');
     // 削除ボタン（右上）
-    const removeBtn = headerActions.createEl('button', { text: '🗑', cls: 'clickable-icon subtle-danger' });
+    const removeBtn = headerActions.createEl('button', { text: '🗑', cls: 'clickable-icon' });
     removeBtn.setAttr('aria-label', this.plugin.translate('settings.group.removeTooltip'));
 
     const enterEdit = () => {
@@ -725,7 +725,25 @@ class FileNavigatorSettingTab extends PluginSettingTab {
       cls: 'file-navigator-rule__title sr-only'
     });
     const headerActions = header.createDiv({ cls: 'file-navigator-rule__header-actions' });
-    const removeIconBtn = headerActions.createEl('button', { text: '🗑', cls: 'clickable-icon warning' });
+    const index = group.rules.findIndex((item) => item.id === rule.id);
+    const isFirst = index <= 0;
+    const isLast = index >= group.rules.length - 1;
+
+    const moveUpBtn = headerActions.createEl('button', { text: '↑', cls: 'clickable-icon' });
+    moveUpBtn.setAttr('aria-label', this.plugin.translate('settings.rule.moveUp'));
+    moveUpBtn.disabled = isFirst;
+    moveUpBtn.addEventListener('click', async () => {
+      await this.moveRule(group, rule, -1);
+    });
+
+    const moveDownBtn = headerActions.createEl('button', { text: '↓', cls: 'clickable-icon' });
+    moveDownBtn.setAttr('aria-label', this.plugin.translate('settings.rule.moveDown'));
+    moveDownBtn.disabled = isLast;
+    moveDownBtn.addEventListener('click', async () => {
+      await this.moveRule(group, rule, 1);
+    });
+
+    const removeIconBtn = headerActions.createEl('button', { text: '🗑', cls: 'clickable-icon' });
     removeIconBtn.setAttr('aria-label', this.plugin.translate('settings.rule.removeButtonTooltip'));
     removeIconBtn.addEventListener('click', async () => {
       group.rules = group.rules.filter((item) => item.id !== rule.id);
@@ -900,35 +918,6 @@ class FileNavigatorSettingTab extends PluginSettingTab {
       });
     }
 
-    const orderSetting = new Setting(ruleWrapper);
-    orderSetting.settingEl.addClass('file-navigator-rule__order');
-    orderSetting.setName(this.plugin.translate('settings.rule.orderControlsTitle'));
-
-    const index = group.rules.findIndex((item) => item.id === rule.id);
-    const isFirst = index <= 0;
-    const isLast = index >= group.rules.length - 1;
-
-    orderSetting.addButton((button) => {
-      button
-        .setButtonText('Up')
-        .setTooltip(this.plugin.translate('settings.rule.moveUp'))
-        .setDisabled(isFirst)
-        .onClick(async () => {
-          await this.moveRule(group, rule, -1);
-        });
-    });
-
-    orderSetting.addButton((button) => {
-      button
-        .setButtonText('Down')
-        .setTooltip(this.plugin.translate('settings.rule.moveDown'))
-        .setDisabled(isLast)
-        .onClick(async () => {
-          await this.moveRule(group, rule, 1);
-        });
-    });
-
-    // 削除はヘッダー右上アイコンに移動
   }
 
   private async moveRule(group: NavigationGroupSetting, rule: NavigationRuleSetting, delta: number): Promise<void> {
