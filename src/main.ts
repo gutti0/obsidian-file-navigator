@@ -531,26 +531,36 @@ export default class FileNavigatorPlugin extends Plugin {
       settingManager.openTabById?.('hotkeys');
     }
 
+    const safeSearchTerm = `"${searchTerm.replace(/"/g, '\\"')}"`;
+
     // 設定検索ではなく、ホットキー画面の検索欄へ条件を入れる
     const applySearchTerm = (attempts: number): void => {
-      const inputCandidates = Array.from(document.querySelectorAll('input')).filter((input): input is HTMLInputElement => {
-        if (!(input instanceof HTMLInputElement)) return false;
-        const placeholder = input.placeholder?.toLowerCase() ?? '';
-        const ariaLabel = (input.getAttribute('aria-label') ?? '').toLowerCase();
-        const className = input.className?.toLowerCase() ?? '';
-        return (
-          input.type === 'search' ||
-          className.includes('hotkey') ||
-          placeholder.includes('hotkey') ||
-          ariaLabel.includes('hotkey')
-        );
-      });
-      const searchInput = inputCandidates[0] ?? null;
+      const rootCandidates = [
+        document.querySelector('.vertical-tab-content-container'),
+        document.querySelector('.modal-content')
+      ].filter((el): el is Element => Boolean(el));
+
+      const searchInput = rootCandidates
+        .flatMap((root) => Array.from(root.querySelectorAll('input[type="search"], input')))
+        .find((input): input is HTMLInputElement => {
+          if (!(input instanceof HTMLInputElement)) return false;
+          const className = input.className?.toLowerCase() ?? '';
+          const placeholder = input.placeholder?.toLowerCase() ?? '';
+          const ariaLabel = (input.getAttribute('aria-label') ?? '').toLowerCase();
+          // ホットキー欄らしい入力に限定し、設定全体の検索欄を避ける
+          return className.includes('hotkey') || placeholder.includes('hotkey') || ariaLabel.includes('hotkey');
+        }) ?? null;
       if (searchInput) {
-        searchInput.focus();
-        searchInput.value = searchTerm;
-        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-        searchInput.dispatchEvent(new Event('change', { bubbles: true }));
+        try {
+          searchInput.focus();
+          searchInput.value = safeSearchTerm;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          searchInput.dispatchEvent(new Event('change', { bubbles: true }));
+        } catch (error) {
+          // クエリ解釈エラー時は記号を省いた語で再試行する
+          searchInput.value = 'File Navigator Home';
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
         return;
       }
       if (attempts > 0) {
