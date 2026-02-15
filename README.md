@@ -13,6 +13,14 @@
 2. BRAT の設定画面で「Add Beta Plugin」を選び、このリポジトリの URL を追加します。 / In BRAT settings choose "Add Beta Plugin" and add this repository URL.
 3. プラグイン一覧から File Navigator を有効化します。 / Enable File Navigator from the plugin list.
 
+### 開発者向け BRAT 公開手順 / BRAT Release Flow for Maintainers
+
+1. BRAT 配布に必要なファイルをリポジトリ直下へ同期します。 / Sync BRAT assets to repository root.
+
+        npm run build:brat
+
+2. 生成された `main.js` / `manifest.json` / `styles.css` を含めてコミットし、タグまたはリリースを作成します。 / Commit generated `main.js` / `manifest.json` / `styles.css`, then create a tag or release.
+
 ### 開発環境 / Development Environment
 
 1. リポジトリをクローンし、依存関係をインストールします。 / Clone the repository and install dependencies.

@@ -86,3 +86,14 @@
 - `openHotkeySettings` を同方式へ寄せ、ホットキータブの検索欄へ直接検索語を設定するよう修正
 - `npm test` を実行し、全テスト通過を確認
 
+## 追加のやるべきこと（2026-02-15 BRAT対応）
+- BRAT配布で必要な成果物（`main.js`/`manifest.json`/`styles.css`）をリポジトリ直下へ同期する仕組みを追加
+- `package.json` と `README.md` に BRAT公開・更新手順を追記
+- ビルドとテストを実行して動作確認
+
+## やったこと（2026-02-15 BRAT対応）
+- `scripts/sync-brat-assets.mjs` を追加し、`build` からリポジトリ直下へ `main.js` / `manifest.json` / `styles.css` を同期可能にした
+- `package.json` に `npm run build:brat` を追加し、ビルドと同期を一括実行できるようにした
+- `README.md` に BRAT公開手順（開発者向け）を追記した
+- `npm run build:brat` と `npm test` を実行し、成果物更新と全テスト通過を確認した
+
