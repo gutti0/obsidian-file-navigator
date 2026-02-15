@@ -524,51 +524,39 @@ export default class FileNavigatorPlugin extends Plugin {
     const commandsApi = (this.app as unknown as { commands?: { executeCommandById?: (id: string) => boolean } }).commands;
     commandsApi?.executeCommandById?.('app:open-hotkeys');
 
-    // フォールバック：設定画面を開いてホットキータブへ遷移
-    const settingManager = (this.app as unknown as { setting?: { open: () => void; openTabById?: (id: string) => void } }).setting;
+    // Templater と同様の方法で、ホットキータブの検索欄へ直接入力する
+    const settingManager = (this.app as unknown as {
+      setting?: {
+        open: () => void;
+        openTabById?: (id: string) => void;
+        activeTab?: {
+          searchComponent?: { inputEl?: HTMLInputElement };
+          updateHotkeyVisibility?: () => void;
+        };
+      };
+    }).setting;
     if (settingManager) {
       settingManager.open?.();
       settingManager.openTabById?.('hotkeys');
-    }
 
-    const safeSearchTerm = `"${searchTerm.replace(/"/g, '\\"')}"`;
-
-    // 設定検索ではなく、ホットキー画面の検索欄へ条件を入れる
-    const applySearchTerm = (attempts: number): void => {
-      const rootCandidates = [
-        document.querySelector('.vertical-tab-content-container'),
-        document.querySelector('.modal-content')
-      ].filter((el): el is Element => Boolean(el));
-
-      const searchInput = rootCandidates
-        .flatMap((root) => Array.from(root.querySelectorAll('input[type="search"], input')))
-        .find((input): input is HTMLInputElement => {
-          if (!(input instanceof HTMLInputElement)) return false;
-          const className = input.className?.toLowerCase() ?? '';
-          const placeholder = input.placeholder?.toLowerCase() ?? '';
-          const ariaLabel = (input.getAttribute('aria-label') ?? '').toLowerCase();
-          // ホットキー欄らしい入力に限定し、設定全体の検索欄を避ける
-          return className.includes('hotkey') || placeholder.includes('hotkey') || ariaLabel.includes('hotkey');
-        }) ?? null;
-      if (searchInput) {
-        try {
-          searchInput.focus();
-          searchInput.value = safeSearchTerm;
-          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-          searchInput.dispatchEvent(new Event('change', { bubbles: true }));
-        } catch (error) {
-          // クエリ解釈エラー時は記号を省いた語で再試行する
-          searchInput.value = 'File Navigator Home';
-          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+      const applySearchTerm = (attempts: number): void => {
+        const activeTab = settingManager.activeTab;
+        const inputEl = activeTab?.searchComponent?.inputEl;
+        if (inputEl) {
+          inputEl.focus();
+          inputEl.value = searchTerm;
+          activeTab?.updateHotkeyVisibility?.();
+          inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+          inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+          return;
         }
-        return;
-      }
-      if (attempts > 0) {
-        window.setTimeout(() => applySearchTerm(attempts - 1), 100);
-      }
-    };
+        if (attempts > 0) {
+          window.setTimeout(() => applySearchTerm(attempts - 1), 100);
+        }
+      };
 
-    window.setTimeout(() => applySearchTerm(30), 100);
+      window.setTimeout(() => applySearchTerm(20), 100);
+    }
   }
 }
 

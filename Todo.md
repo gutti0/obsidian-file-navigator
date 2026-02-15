@@ -76,3 +76,13 @@
 - 検索語をクォートして投入し、クエリ解釈失敗時は `File Navigator Home` へフォールバック
 - `npm test` を実行し、全テスト通過を確認
 
+## 追加のやるべきこと（2026-02-15 Templater実装調査）
+- Templater プラグインの「ホットキー設定を開く」実装を確認
+- 同方式で本プラグインに適用可能か検証
+- 必要なら実装修正とテスト実行
+
+## やったこと（2026-02-15 Templater実装調査）
+- Templater（`src/settings/Settings.ts`）の `activeTab.searchComponent.inputEl` と `updateHotkeyVisibility()` を使う実装を確認
+- `openHotkeySettings` を同方式へ寄せ、ホットキータブの検索欄へ直接検索語を設定するよう修正
+- `npm test` を実行し、全テスト通過を確認
+
