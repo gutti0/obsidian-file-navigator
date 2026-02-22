@@ -1,6 +1,6 @@
 {
   "name": "obsidian-file-navigator",
-  "version": "0.1.0",
+  "version": "1.0.1",
   "description": "Navigate between filtered and sorted files around the current note in Obsidian.",
   "main": "main.js",
   "types": "types.d.ts",
