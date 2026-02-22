@@ -119,3 +119,13 @@
 - `manifest.json` / `versions.json` / `package.json` を `1.0.1` に更新し、バージョン整合を取った
 - `npm run build:brat` で配布ファイルを更新し、`npm test` 全件通過を確認した
 
+## 追加のやるべきこと（2026-02-22 v1.0.2 バグ修正）
+- 「ホットキー設定を開く」時の検索語から方向ラベル（例: 前のファイルへ移動）を除去し、グループ名ベースに修正
+- `v1.0.2` リリース向けに `manifest.json` / `versions.json` / `package.json` のバージョンを更新
+- `build:brat` と `npm test` を実行してからコミットし、タグを作成してpush
+
+## やったこと（2026-02-22 v1.0.2 バグ修正）
+- 「ホットキー設定を開く」ボタン押下時の検索語を `File Navigator: {グループ名}` 形式に変更し、方向ラベルが混ざらないように修正
+- `manifest.json` / `versions.json` / `package.json` を `1.0.2` に更新した
+- `npm run build:brat` で配布ファイル（`main.js` など）を更新し、`npm test` 全件通過を確認した
+

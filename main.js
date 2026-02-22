@@ -846,9 +846,8 @@ class FileNavigatorSettingTab extends obsidian.PluginSettingTab {
             button
                 .setButtonText(this.plugin.translate('settings.group.hotkeysButton'))
                 .onClick(() => {
-                const firstDescriptor = commandDescriptors[0];
-                const groupCommandLabel = firstDescriptor ? firstDescriptor.label : this.plugin.getGroupLabel(group);
-                this.plugin.openHotkeySettings(`${this.plugin.manifest.name}: ${groupCommandLabel}`);
+                const groupLabel = this.plugin.getGroupLabel(group);
+                this.plugin.openHotkeySettings(`${this.plugin.manifest.name}: ${groupLabel}`);
             });
         });
         removeBtn.addEventListener('click', async () => {
