@@ -97,3 +97,15 @@
 - `README.md` に BRAT公開手順（開発者向け）を追記した
 - `npm run build:brat` と `npm test` を実行し、成果物更新と全テスト通過を確認した
 
+## 追加のやるべきこと（2026-02-22 GitHub Actions対応）
+- タグpushで GitHub Release を自動作成する workflow を追加
+- Release assets に `main.js` / `manifest.json` / `styles.css` を自動添付
+- `manifest.json` の version とタグの整合性チェックを追加
+- テスト実行で既存機能に影響がないことを確認
+
+## やったこと（2026-02-22 GitHub Actions対応）
+- `.github/workflows/release.yml` を追加し、タグpush時に GitHub Release を自動作成するようにした
+- Release assets に `main.js` / `manifest.json` / `styles.css` を添付する設定を追加した
+- タグ（`v` 接頭辞許容）と `manifest.json` の version の一致チェックを追加した
+- `README.md` に自動リリース手順を追記し、`npm test` 全件通過を確認した
+

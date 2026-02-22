@@ -21,6 +21,11 @@
 
 2. 生成された `main.js` / `manifest.json` / `styles.css` を含めてコミットし、タグまたはリリースを作成します。 / Commit generated `main.js` / `manifest.json` / `styles.css`, then create a tag or release.
 
+### GitHub Releases 自動化 / Automated GitHub Releases
+
+- `.github/workflows/release.yml` を追加済みです。`v0.1.1` または `0.1.1` 形式のタグを push すると、GitHub Actions が Release を作成し、`main.js` / `manifest.json` / `styles.css` を assets に添付します。
+- タグのバージョンは `manifest.json` の `version` と一致している必要があります（不一致の場合は workflow が失敗します）。
+
 ### 開発環境 / Development Environment
 
 1. リポジトリをクローンし、依存関係をインストールします。 / Clone the repository and install dependencies.
