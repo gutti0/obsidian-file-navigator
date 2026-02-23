@@ -43,9 +43,10 @@
 
 ## コマンドとショートカット / Commands and Shortcuts
 
-- 次のファイルへ移動 / Go to next file
-- 前のファイルへ移動 / Go to previous file
+- 新しいファイルへ移動 / Go to newer file
+- 古いファイルへ移動 / Go to older file
 - 最新のファイルへ移動 / Go to latest file
+- 最古のファイルへ移動 / Go to oldest file
 
 ショートカットは Obsidian のホットキー設定から任意に割り当てます。 / Assign shortcuts from Obsidian Hotkeys settings as needed.
 
@@ -53,7 +54,7 @@
 
 - 設定画面（`設定 > ファイルナビゲーター`）からグループを追加し、タグまたはフォルダフィルターと各種ソート条件を GUI で編集できます。 / From `Settings > File Navigator` you can add groups, choose tag or folder filters, and configure sorting options via the GUI.
 - frontmatter で並び替える場合は、キー名と値の型（文字列／数値／日付）を指定します。 / When sorting by frontmatter, provide the key name and its value type (string/number/date).
-- 各グループごとに「前へ／次へ／最新」コマンドが自動登録され、ホットキー設定から個別に割り当てできます。 / Each group registers its own Previous/Next/Latest commands so you can assign hotkeys per group.
+- 各グループごとに「古い／新しい／最新／最古」コマンドが自動登録され、ホットキー設定から個別に割り当てできます。 / Each group registers its own Older/Newer/Latest/Oldest commands so you can assign hotkeys per group.
 
 ## テスト / Testing
 
