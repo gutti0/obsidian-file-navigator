@@ -5,8 +5,8 @@ var obsidian = require('obsidian');
 var en = {
 	"plugin.name": "File Navigator",
 	"plugin.description": "Navigate between filtered and sorted files relative to the active note.",
-	"commands.navigateNext": "Go to next file",
-	"commands.navigatePrevious": "Go to previous file",
+	"commands.navigateNext": "Go to newer file",
+	"commands.navigatePrevious": "Go to older file",
 	"commands.navigateLatest": "Go to latest file",
 	"notices.noActiveFile": "Open a note to use File Navigator.",
 	"notices.notImplemented": "File navigation rules are not configured yet.",
@@ -84,14 +84,14 @@ var en = {
 	"settings.group.removeDesc": "Delete this group and its commands.",
 	"settings.group.removeTooltip": "Remove group",
 	"notices.noCandidateFound": "No matching file was found for this group.",
-	"commands.navigateOldest": "Go to oldest"
+	"commands.navigateOldest": "Go to oldest file"
 };
 
 var ja = {
 	"plugin.name": "ファイルナビゲーター",
 	"plugin.description": "アクティブなノートを基準に、条件で絞り込んだファイルへ移動します。",
-	"commands.navigateNext": "次のファイルへ移動",
-	"commands.navigatePrevious": "前のファイルへ移動",
+	"commands.navigateNext": "新しいファイルへ移動",
+	"commands.navigatePrevious": "古いファイルへ移動",
 	"commands.navigateLatest": "最新のファイルへ移動",
 	"notices.noActiveFile": "ノートを開いてからファイルナビゲーターを使用してください。",
 	"notices.notImplemented": "ファイル移動ルールがまだ設定されていません。",
@@ -169,7 +169,7 @@ var ja = {
 	"settings.group.removeDesc": "グループおよび関連ショートカットを削除します。",
 	"settings.group.removeTooltip": "グループを削除",
 	"notices.noCandidateFound": "該当するファイルが見つかりませんでした。",
-	"commands.navigateOldest": "最古へ移動"
+	"commands.navigateOldest": "最古のファイルへ移動"
 };
 
 const dictionaries = {

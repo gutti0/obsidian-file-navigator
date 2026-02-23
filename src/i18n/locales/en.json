@@ -1,8 +1,8 @@
 {
   "plugin.name": "File Navigator",
   "plugin.description": "Navigate between filtered and sorted files relative to the active note.",
-  "commands.navigateNext": "Go to next file",
-  "commands.navigatePrevious": "Go to previous file",
+  "commands.navigateNext": "Go to newer file",
+  "commands.navigatePrevious": "Go to older file",
   "commands.navigateLatest": "Go to latest file",
   "notices.noActiveFile": "Open a note to use File Navigator.",
   "notices.notImplemented": "File navigation rules are not configured yet.",
@@ -80,5 +80,5 @@
   "settings.group.removeDesc": "Delete this group and its commands.",
   "settings.group.removeTooltip": "Remove group",
   "notices.noCandidateFound": "No matching file was found for this group.",
-  "commands.navigateOldest": "Go to oldest"
+  "commands.navigateOldest": "Go to oldest file"
 }
