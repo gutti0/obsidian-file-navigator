@@ -62,6 +62,12 @@
 
         npm run test
 
+## フォーマット / Formatting
+
+- Biome を formatter/linter として利用します。 / Biome is used as the formatter/linter.
+
+        npm run format
+
 ## i18n
 
 - 翻訳文字列は `src/i18n/locales` 配下の JSON に配置されています。 / Translation strings live in the JSON files under `src/i18n/locales`.
