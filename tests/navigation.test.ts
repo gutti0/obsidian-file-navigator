@@ -193,6 +193,86 @@ describe('navigation', () => {
     expect(__notices).toContain('No matching file was found for this group.');
   });
 
+  it('moves to newer file even when sortDirection is desc', async () => {
+    const files = [
+      createFile('notes/a.md', 1, 10),
+      createFile('notes/b.md', 2, 20),
+      createFile('notes/c.md', 3, 30),
+    ];
+
+    const { plugin, app, openSpy } = setupPlugin(files);
+
+    const group = {
+      id: 'group-next-desc',
+      name: 'NotesDesc',
+      rules: [
+        {
+          id: 'rule-folder',
+          filterType: 'folder' as const,
+          filterValue: 'notes',
+          sortType: 'created' as const,
+          sortDirection: 'desc' as const,
+        },
+      ],
+    };
+
+    (
+      plugin as unknown as { settings: { groups: (typeof group)[] } }
+    ).settings.groups = [group];
+    app.workspace.setActiveFile(files[1]); // b
+
+    await (
+      plugin as unknown as {
+        navigate: (
+          g: typeof group,
+          direction: 'previous' | 'next' | 'latest',
+        ) => Promise<void>;
+      }
+    ).navigate(group, 'next');
+
+    expect(openSpy).toHaveBeenCalledWith(files[2]); // c（より新しい）
+  });
+
+  it('moves to older file even when sortDirection is desc', async () => {
+    const files = [
+      createFile('notes/a.md', 1, 10),
+      createFile('notes/b.md', 2, 20),
+      createFile('notes/c.md', 3, 30),
+    ];
+
+    const { plugin, app, openSpy } = setupPlugin(files);
+
+    const group = {
+      id: 'group-previous-desc',
+      name: 'NotesDesc',
+      rules: [
+        {
+          id: 'rule-folder',
+          filterType: 'folder' as const,
+          filterValue: 'notes',
+          sortType: 'created' as const,
+          sortDirection: 'desc' as const,
+        },
+      ],
+    };
+
+    (
+      plugin as unknown as { settings: { groups: (typeof group)[] } }
+    ).settings.groups = [group];
+    app.workspace.setActiveFile(files[1]); // b
+
+    await (
+      plugin as unknown as {
+        navigate: (
+          g: typeof group,
+          direction: 'previous' | 'next' | 'latest',
+        ) => Promise<void>;
+      }
+    ).navigate(group, 'previous');
+
+    expect(openSpy).toHaveBeenCalledWith(files[0]); // a（より古い）
+  });
+
   it('opens the oldest file within the rule that contains the active file (multiple rules)', async () => {
     const files = [
       // notes group

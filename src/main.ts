@@ -279,7 +279,7 @@ export default class FileNavigatorPlugin extends Plugin {
       return null;
     }
 
-    // previous/next: アクティブファイルを含む最初のルールでのみ前後移動（ループしない）
+    // previous/next: 「新しい/古い」の意味を sortDirection に関係なく維持する（ループしない）
     for (const rule of group.rules) {
       const candidates = this.sortRuleCandidates(
         this.collectRuleCandidates(rule),
@@ -290,13 +290,19 @@ export default class FileNavigatorPlugin extends Plugin {
         (item) => item.path === activeFile.path,
       );
       if (currentIndex === -1) continue;
-      if (direction === 'next') {
-        if (currentIndex >= candidates.length - 1) return null;
-        return candidates[currentIndex + 1];
+      const step =
+        direction === 'next'
+          ? rule.sortDirection === 'asc'
+            ? 1
+            : -1
+          : rule.sortDirection === 'asc'
+            ? -1
+            : 1;
+      const targetIndex = currentIndex + step;
+      if (targetIndex < 0 || targetIndex >= candidates.length) {
+        return null;
       }
-      // previous
-      if (currentIndex <= 0) return null;
-      return candidates[currentIndex - 1];
+      return candidates[targetIndex] ?? null;
     }
     return null;
   }
