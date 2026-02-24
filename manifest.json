@@ -1,7 +1,7 @@
 {
   "id": "obsidian-file-navigator",
   "name": "File Navigator",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "minAppVersion": "1.4.0",
   "description": "開いているノートを基点に、ルールに従って前後や最新のファイルへ移動します。",
   "author": "",

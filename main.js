@@ -174,7 +174,7 @@ var ja = {
 
 const dictionaries = {
     en,
-    ja
+    ja,
 };
 const fallbackLocale = 'en';
 const normalize = (value) => {
@@ -229,7 +229,8 @@ const createTranslator = (app) => {
 };
 
 const createId = () => {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    if (typeof crypto !== 'undefined' &&
+        typeof crypto.randomUUID === 'function') {
         return crypto.randomUUID();
     }
     return 'fn_' + Math.random().toString(36).slice(2, 12);
@@ -261,8 +262,14 @@ class FileNavigatorPlugin extends obsidian.Plugin {
                 id: typeof group.id === 'string' ? group.id : createId(),
                 name: typeof group.name === 'string' ? group.name : '',
                 rules: rules.map((rule) => {
-                    const sortType = rule.sortType === 'modified' || rule.sortType === 'filename' || rule.sortType === 'frontmatter' ? rule.sortType : 'created';
-                    const filterType = rule.filterType === 'folder' || rule.filterType === 'property' ? rule.filterType : 'tag';
+                    const sortType = rule.sortType === 'modified' ||
+                        rule.sortType === 'filename' ||
+                        rule.sortType === 'frontmatter'
+                        ? rule.sortType
+                        : 'created';
+                    const filterType = rule.filterType === 'folder' || rule.filterType === 'property'
+                        ? rule.filterType
+                        : 'tag';
                     const sortDirection = rule.sortDirection === 'desc' ? 'desc' : 'asc';
                     const baseRule = {
                         id: typeof rule.id === 'string' ? rule.id : createId(),
@@ -273,19 +280,27 @@ class FileNavigatorPlugin extends obsidian.Plugin {
                         sortKey: rule.sortKey,
                         sortValueType: rule.sortValueType,
                         propertyKey: rule.propertyKey,
-                        propertyValue: rule.propertyValue
+                        propertyValue: rule.propertyValue,
                     };
                     if (baseRule.sortType !== 'frontmatter') {
                         delete baseRule.sortKey;
                         delete baseRule.sortValueType;
                     }
                     else {
-                        baseRule.sortKey = typeof rule.sortKey === 'string' ? rule.sortKey : '';
-                        baseRule.sortValueType = rule.sortValueType === 'number' || rule.sortValueType === 'date' ? rule.sortValueType : 'string';
+                        baseRule.sortKey =
+                            typeof rule.sortKey === 'string' ? rule.sortKey : '';
+                        baseRule.sortValueType =
+                            rule.sortValueType === 'number' || rule.sortValueType === 'date'
+                                ? rule.sortValueType
+                                : 'string';
                     }
                     if (baseRule.filterType === 'property') {
-                        baseRule.propertyKey = typeof rule.propertyKey === 'string' ? rule.propertyKey : '';
-                        baseRule.propertyValue = typeof rule.propertyValue === 'string' ? rule.propertyValue : '';
+                        baseRule.propertyKey =
+                            typeof rule.propertyKey === 'string' ? rule.propertyKey : '';
+                        baseRule.propertyValue =
+                            typeof rule.propertyValue === 'string'
+                                ? rule.propertyValue
+                                : '';
                         baseRule.filterValue = '';
                     }
                     else {
@@ -293,7 +308,7 @@ class FileNavigatorPlugin extends obsidian.Plugin {
                         delete baseRule.propertyValue;
                     }
                     return baseRule;
-                })
+                }),
             };
         });
         this.settings = { groups };
@@ -309,12 +324,17 @@ class FileNavigatorPlugin extends obsidian.Plugin {
     registerGroupCommands() {
         for (const group of this.settings.groups) {
             const label = this.getGroupLabel(group);
-            const directions = ['previous', 'next', 'latest', 'oldest'];
+            const directions = [
+                'previous',
+                'next',
+                'latest',
+                'oldest',
+            ];
             for (const direction of directions) {
                 const command = this.addCommand({
                     id: this.getGroupCommandBaseId(group, direction),
                     name: this.formatGroupCommandLabel(label, direction),
-                    callback: () => this.navigate(group, direction)
+                    callback: () => this.navigate(group, direction),
                 });
                 this.registeredCommandIds.push(command.id);
             }
@@ -370,7 +390,11 @@ class FileNavigatorPlugin extends obsidian.Plugin {
         await this.handleNavigation(group, activeFile, direction);
     }
     async handleNavigation(group, file, direction) {
-        console.debug('FileNavigatorPlugin', 'navigate', { group: group.id, direction, file: file.path });
+        console.debug('FileNavigatorPlugin', 'navigate', {
+            group: group.id,
+            direction,
+            file: file.path,
+        });
         const target = this.resolveNavigationTarget(group, file, direction);
         if (!target) {
             new obsidian.Notice(this.translate('notices.noCandidateFound'));
@@ -410,7 +434,7 @@ class FileNavigatorPlugin extends obsidian.Plugin {
             }
             return null;
         }
-        // previous/next: アクティブファイルを含む最初のルールでのみ前後移動（ループしない）
+        // previous/next: 「新しい/古い」の意味を sortDirection に関係なく維持する（ループしない）
         for (const rule of group.rules) {
             const candidates = this.sortRuleCandidates(this.collectRuleCandidates(rule), rule);
             if (candidates.length === 0)
@@ -418,15 +442,18 @@ class FileNavigatorPlugin extends obsidian.Plugin {
             const currentIndex = candidates.findIndex((item) => item.path === activeFile.path);
             if (currentIndex === -1)
                 continue;
-            if (direction === 'next') {
-                if (currentIndex >= candidates.length - 1)
-                    return null;
-                return candidates[currentIndex + 1];
-            }
-            // previous
-            if (currentIndex <= 0)
+            const step = direction === 'next'
+                ? rule.sortDirection === 'asc'
+                    ? 1
+                    : -1
+                : rule.sortDirection === 'asc'
+                    ? -1
+                    : 1;
+            const targetIndex = currentIndex + step;
+            if (targetIndex < 0 || targetIndex >= candidates.length) {
                 return null;
-            return candidates[currentIndex - 1];
+            }
+            return candidates[targetIndex] ?? null;
         }
         return null;
     }
@@ -458,9 +485,12 @@ class FileNavigatorPlugin extends obsidian.Plugin {
         if (!normalized) {
             return true;
         }
-        const withoutSlashes = normalized.replace(/^[/\\\\]+|[/\\\\]+$/g, '').toLowerCase();
+        const withoutSlashes = normalized
+            .replace(/^[/\\\\]+|[/\\\\]+$/g, '')
+            .toLowerCase();
         const fileFolder = (file.parent?.path ?? '').toLowerCase();
-        return fileFolder === withoutSlashes || fileFolder.startsWith(`${withoutSlashes}/`);
+        return (fileFolder === withoutSlashes ||
+            fileFolder.startsWith(`${withoutSlashes}/`));
     }
     matchesProperty(rule, file) {
         const key = rule.propertyKey?.trim();
@@ -575,7 +605,9 @@ class FileNavigatorPlugin extends obsidian.Plugin {
     }
     getGroupLabel(group) {
         const name = group.name?.trim();
-        return name && name.length > 0 ? name : this.translate('settings.group.titleFallback');
+        return name && name.length > 0
+            ? name
+            : this.translate('settings.group.titleFallback');
     }
     getRuleSummary(rule) {
         const missingValue = this.translate('settings.rule.summary.missing');
@@ -599,11 +631,16 @@ class FileNavigatorPlugin extends obsidian.Plugin {
     }
     getGroupCommandDescriptors(group) {
         const label = this.getGroupLabel(group);
-        const directions = ['previous', 'next', 'latest', 'oldest'];
+        const directions = [
+            'previous',
+            'next',
+            'latest',
+            'oldest',
+        ];
         return directions.map((direction) => ({
             direction,
             id: this.getGroupCommandFullId(group, direction),
-            label: this.formatGroupCommandLabel(label, direction)
+            label: this.formatGroupCommandLabel(label, direction),
         }));
     }
     // 入力補助: テキストボックスにサジェストを付与
@@ -659,7 +696,9 @@ class FileNavigatorPlugin extends obsidian.Plugin {
         const onInput = () => {
             const q = input.value.trim().toLowerCase();
             const items = getItems();
-            const filtered = q ? items.filter((x) => x.toLowerCase().includes(q)) : items;
+            const filtered = q
+                ? items.filter((x) => x.toLowerCase().includes(q))
+                : items;
             if (filtered.length === 0) {
                 hide();
                 return;
@@ -745,9 +784,15 @@ class FileNavigatorSettingTab extends obsidian.PluginSettingTab {
     display() {
         const { containerEl } = this;
         containerEl.empty();
-        containerEl.createEl('h2', { text: this.plugin.translate('settings.title') });
-        containerEl.createEl('p', { text: this.plugin.translate('settings.description') });
-        const groupsContainer = containerEl.createDiv({ cls: 'file-navigator-settings__groups' });
+        containerEl.createEl('h2', {
+            text: this.plugin.translate('settings.title'),
+        });
+        containerEl.createEl('p', {
+            text: this.plugin.translate('settings.description'),
+        });
+        const groupsContainer = containerEl.createDiv({
+            cls: 'file-navigator-settings__groups',
+        });
         this.renderGroups(groupsContainer);
     }
     renderGroups(container) {
@@ -756,7 +801,7 @@ class FileNavigatorSettingTab extends obsidian.PluginSettingTab {
         if (groups.length === 0) {
             container.createEl('p', {
                 text: this.plugin.translate('settings.groups.empty'),
-                cls: 'file-navigator-settings__empty'
+                cls: 'file-navigator-settings__empty',
             });
         }
         for (const group of groups) {
@@ -775,7 +820,7 @@ class FileNavigatorSettingTab extends obsidian.PluginSettingTab {
                 const newGroup = {
                     id: createId(),
                     name: '',
-                    rules: []
+                    rules: [],
                 };
                 this.plugin.settings.groups.push(newGroup);
                 await this.plugin.saveSettings();
@@ -785,22 +830,35 @@ class FileNavigatorSettingTab extends obsidian.PluginSettingTab {
     }
     renderGroup(parent, group) {
         const groupWrapper = parent.createDiv({ cls: 'file-navigator-group' });
-        const headerEl = groupWrapper.createDiv({ cls: 'file-navigator-group__header' });
+        const headerEl = groupWrapper.createDiv({
+            cls: 'file-navigator-group__header',
+        });
         const titleEl = headerEl.createEl('h3', {
             text: this.plugin.getGroupLabel(group),
-            cls: 'file-navigator-group__title'
+            cls: 'file-navigator-group__title',
         });
         // インライン編集用の入力（タイトルの位置に出すため、アクションより先に配置）
-        const nameInput = headerEl.createEl('input', { type: 'text', cls: 'file-navigator-group__name-input' });
+        const nameInput = headerEl.createEl('input', {
+            type: 'text',
+            cls: 'file-navigator-group__name-input',
+        });
         nameInput.placeholder = this.plugin.translate('settings.group.namePlaceholder');
         nameInput.value = group.name ?? '';
         nameInput.style.display = 'none';
-        const headerActions = headerEl.createDiv({ cls: 'file-navigator-group__header-actions' });
+        const headerActions = headerEl.createDiv({
+            cls: 'file-navigator-group__header-actions',
+        });
         // 編集トグルボタン
-        const editBtn = headerActions.createEl('button', { text: '✎', cls: 'clickable-icon' });
+        const editBtn = headerActions.createEl('button', {
+            text: '✎',
+            cls: 'clickable-icon',
+        });
         editBtn.setAttr('aria-label', 'Edit');
         // 削除ボタン（右上）
-        const removeBtn = headerActions.createEl('button', { text: '🗑', cls: 'clickable-icon' });
+        const removeBtn = headerActions.createEl('button', {
+            text: '🗑',
+            cls: 'clickable-icon',
+        });
         removeBtn.setAttr('aria-label', this.plugin.translate('settings.group.removeTooltip'));
         const enterEdit = () => {
             titleEl.style.display = 'none';
@@ -827,8 +885,7 @@ class FileNavigatorSettingTab extends obsidian.PluginSettingTab {
             if (e.key === 'Escape')
                 void exitEdit(false);
         });
-        const hotkeysSetting = new obsidian.Setting(groupWrapper)
-            .setName(this.plugin.translate('settings.group.hotkeysTitle'));
+        const hotkeysSetting = new obsidian.Setting(groupWrapper).setName(this.plugin.translate('settings.group.hotkeysTitle'));
         let commandDescriptors = [];
         const updateHotkeyDescription = () => {
             commandDescriptors = this.plugin.getGroupCommandDescriptors(group);
@@ -855,11 +912,13 @@ class FileNavigatorSettingTab extends obsidian.PluginSettingTab {
             await this.plugin.saveSettings();
             this.display();
         });
-        const rulesContainer = groupWrapper.createDiv({ cls: 'file-navigator-group__rules' });
+        const rulesContainer = groupWrapper.createDiv({
+            cls: 'file-navigator-group__rules',
+        });
         if (group.rules.length === 0) {
             rulesContainer.createEl('p', {
                 text: this.plugin.translate('settings.rules.empty'),
-                cls: 'file-navigator-rules__empty'
+                cls: 'file-navigator-rules__empty',
             });
         }
         for (const rule of group.rules) {
@@ -880,7 +939,7 @@ class FileNavigatorSettingTab extends obsidian.PluginSettingTab {
                     filterType: 'tag',
                     filterValue: '',
                     sortType: 'created',
-                    sortDirection: 'asc'
+                    sortDirection: 'asc',
                 };
                 group.rules.push(newRule);
                 await this.plugin.saveSettings();
@@ -890,28 +949,41 @@ class FileNavigatorSettingTab extends obsidian.PluginSettingTab {
     }
     renderRule(container, group, rule) {
         const ruleWrapper = container.createDiv({ cls: 'file-navigator-rule' });
-        const header = ruleWrapper.createDiv({ cls: 'file-navigator-rule__header' });
+        const header = ruleWrapper.createDiv({
+            cls: 'file-navigator-rule__header',
+        });
         const titleEl = header.createEl('div', {
             text: this.plugin.getRuleSummary(rule),
-            cls: 'file-navigator-rule__title sr-only'
+            cls: 'file-navigator-rule__title sr-only',
         });
-        const headerActions = header.createDiv({ cls: 'file-navigator-rule__header-actions' });
+        const headerActions = header.createDiv({
+            cls: 'file-navigator-rule__header-actions',
+        });
         const index = group.rules.findIndex((item) => item.id === rule.id);
         const isFirst = index <= 0;
         const isLast = index >= group.rules.length - 1;
-        const moveUpBtn = headerActions.createEl('button', { text: '↑', cls: 'clickable-icon' });
+        const moveUpBtn = headerActions.createEl('button', {
+            text: '↑',
+            cls: 'clickable-icon',
+        });
         moveUpBtn.setAttr('aria-label', this.plugin.translate('settings.rule.moveUp'));
         moveUpBtn.disabled = isFirst;
         moveUpBtn.addEventListener('click', async () => {
             await this.moveRule(group, rule, -1);
         });
-        const moveDownBtn = headerActions.createEl('button', { text: '↓', cls: 'clickable-icon' });
+        const moveDownBtn = headerActions.createEl('button', {
+            text: '↓',
+            cls: 'clickable-icon',
+        });
         moveDownBtn.setAttr('aria-label', this.plugin.translate('settings.rule.moveDown'));
         moveDownBtn.disabled = isLast;
         moveDownBtn.addEventListener('click', async () => {
             await this.moveRule(group, rule, 1);
         });
-        const removeIconBtn = headerActions.createEl('button', { text: '🗑', cls: 'clickable-icon' });
+        const removeIconBtn = headerActions.createEl('button', {
+            text: '🗑',
+            cls: 'clickable-icon',
+        });
         removeIconBtn.setAttr('aria-label', this.plugin.translate('settings.rule.removeButtonTooltip'));
         removeIconBtn.addEventListener('click', async () => {
             group.rules = group.rules.filter((item) => item.id !== rule.id);

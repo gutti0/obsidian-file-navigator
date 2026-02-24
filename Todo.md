@@ -202,3 +202,15 @@
 - `next/previous` の移動量を `sortDirection` に応じて切り替えるよう修正
 - `sortDirection=desc` でも `next=新しい方向` / `previous=古い方向` になるテストを2件追加
 - `npm test` を実行し、全テスト通過を確認
+
+## 追加のやるべきこと（2026-02-24 v1.0.4 リリース）
+- `package.json` / `manifest.json` / `versions.json` のバージョンを `1.0.4` に更新する
+- `npm run build:brat` で配布ファイルを同期する
+- `npm test` を実行してグリーン確認する
+- リリースコミット作成後に `v1.0.4` タグを作成して push する
+
+## やったこと（2026-02-24 v1.0.4 リリース）
+- `package.json` / `manifest.json` / `versions.json` / `package-lock.json` のバージョンを `1.0.4` に更新
+- `npm run build:brat` を実行し、配布ファイル（`main.js` / `manifest.json` / `styles.css`）を同期
+- `npm test` を実行し、全テスト通過を確認
+- リリースコミット作成後に `v1.0.4` タグを作成して push
