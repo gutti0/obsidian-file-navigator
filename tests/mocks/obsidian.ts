@@ -19,7 +19,7 @@ export class Workspace {
     return {
       async openFile(): Promise<void> {
         /* noop */
-      }
+      },
     };
   }
 }
@@ -209,7 +209,9 @@ export class Setting {
     return this;
   }
 
-  setDesc(_desc: string | DocumentFragment | ((fragment: DocumentFragment) => void)): Setting {
+  setDesc(
+    _desc: string | DocumentFragment | ((fragment: DocumentFragment) => void),
+  ): Setting {
     return this;
   }
 

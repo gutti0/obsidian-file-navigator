@@ -1,4 +1,11 @@
-import { Notice, Plugin, PluginSettingTab, Setting, TFile, TextComponent } from 'obsidian';
+import {
+  Notice,
+  Plugin,
+  PluginSettingTab,
+  Setting,
+  TFile,
+  TextComponent,
+} from 'obsidian';
 import { Translator, createTranslator, readAppLocale } from './i18n';
 import {
   FileNavigatorSettings,
@@ -7,7 +14,7 @@ import {
   RuleFilterType,
   SortType,
   SortValueType,
-  createId
+  createId,
 } from './settings';
 
 export type NavigationDirection = 'previous' | 'next' | 'latest' | 'oldest';
@@ -40,45 +47,65 @@ export default class FileNavigatorPlugin extends Plugin {
   async loadSettings(): Promise<void> {
     const data = await this.loadData();
     const rawGroups = Array.isArray(data?.groups) ? data.groups : [];
-    const groups: NavigationGroupSetting[] = rawGroups.map((group: Partial<NavigationGroupSetting>) => {
-      const rules = Array.isArray(group.rules) ? group.rules : [];
-      return {
-        id: typeof group.id === 'string' ? group.id : createId(),
-        name: typeof group.name === 'string' ? group.name : '',
-        rules: rules.map((rule: Partial<NavigationRuleSetting>) => {
-          const sortType: SortType = rule.sortType === 'modified' || rule.sortType === 'filename' || rule.sortType === 'frontmatter' ? rule.sortType : 'created';
-          const filterType: RuleFilterType = rule.filterType === 'folder' || rule.filterType === 'property' ? rule.filterType : 'tag';
-          const sortDirection: 'asc' | 'desc' = rule.sortDirection === 'desc' ? 'desc' : 'asc';
-          const baseRule: NavigationRuleSetting = {
-            id: typeof rule.id === 'string' ? rule.id : createId(),
-            filterType,
-            filterValue: typeof rule.filterValue === 'string' ? rule.filterValue : '',
-            sortType,
-            sortDirection,
-            sortKey: rule.sortKey,
-            sortValueType: rule.sortValueType,
-            propertyKey: rule.propertyKey,
-            propertyValue: rule.propertyValue
-          };
-          if (baseRule.sortType !== 'frontmatter') {
-            delete baseRule.sortKey;
-            delete baseRule.sortValueType;
-          } else {
-            baseRule.sortKey = typeof rule.sortKey === 'string' ? rule.sortKey : '';
-            baseRule.sortValueType = rule.sortValueType === 'number' || rule.sortValueType === 'date' ? rule.sortValueType : 'string';
-          }
-          if (baseRule.filterType === 'property') {
-            baseRule.propertyKey = typeof rule.propertyKey === 'string' ? rule.propertyKey : '';
-            baseRule.propertyValue = typeof rule.propertyValue === 'string' ? rule.propertyValue : '';
-            baseRule.filterValue = '';
-          } else {
-            delete baseRule.propertyKey;
-            delete baseRule.propertyValue;
-          }
-          return baseRule;
-        })
-      };
-    });
+    const groups: NavigationGroupSetting[] = rawGroups.map(
+      (group: Partial<NavigationGroupSetting>) => {
+        const rules = Array.isArray(group.rules) ? group.rules : [];
+        return {
+          id: typeof group.id === 'string' ? group.id : createId(),
+          name: typeof group.name === 'string' ? group.name : '',
+          rules: rules.map((rule: Partial<NavigationRuleSetting>) => {
+            const sortType: SortType =
+              rule.sortType === 'modified' ||
+              rule.sortType === 'filename' ||
+              rule.sortType === 'frontmatter'
+                ? rule.sortType
+                : 'created';
+            const filterType: RuleFilterType =
+              rule.filterType === 'folder' || rule.filterType === 'property'
+                ? rule.filterType
+                : 'tag';
+            const sortDirection: 'asc' | 'desc' =
+              rule.sortDirection === 'desc' ? 'desc' : 'asc';
+            const baseRule: NavigationRuleSetting = {
+              id: typeof rule.id === 'string' ? rule.id : createId(),
+              filterType,
+              filterValue:
+                typeof rule.filterValue === 'string' ? rule.filterValue : '',
+              sortType,
+              sortDirection,
+              sortKey: rule.sortKey,
+              sortValueType: rule.sortValueType,
+              propertyKey: rule.propertyKey,
+              propertyValue: rule.propertyValue,
+            };
+            if (baseRule.sortType !== 'frontmatter') {
+              delete baseRule.sortKey;
+              delete baseRule.sortValueType;
+            } else {
+              baseRule.sortKey =
+                typeof rule.sortKey === 'string' ? rule.sortKey : '';
+              baseRule.sortValueType =
+                rule.sortValueType === 'number' || rule.sortValueType === 'date'
+                  ? rule.sortValueType
+                  : 'string';
+            }
+            if (baseRule.filterType === 'property') {
+              baseRule.propertyKey =
+                typeof rule.propertyKey === 'string' ? rule.propertyKey : '';
+              baseRule.propertyValue =
+                typeof rule.propertyValue === 'string'
+                  ? rule.propertyValue
+                  : '';
+              baseRule.filterValue = '';
+            } else {
+              delete baseRule.propertyKey;
+              delete baseRule.propertyValue;
+            }
+            return baseRule;
+          }),
+        };
+      },
+    );
     this.settings = { groups };
   }
 
@@ -95,12 +122,17 @@ export default class FileNavigatorPlugin extends Plugin {
   private registerGroupCommands(): void {
     for (const group of this.settings.groups) {
       const label = this.getGroupLabel(group);
-      const directions: GroupCommandDirection[] = ['previous', 'next', 'latest', 'oldest'];
+      const directions: GroupCommandDirection[] = [
+        'previous',
+        'next',
+        'latest',
+        'oldest',
+      ];
       for (const direction of directions) {
         const command = this.addCommand({
           id: this.getGroupCommandBaseId(group, direction),
           name: this.formatGroupCommandLabel(label, direction),
-          callback: () => this.navigate(group, direction)
+          callback: () => this.navigate(group, direction),
         });
         this.registeredCommandIds.push(command.id);
       }
@@ -108,7 +140,11 @@ export default class FileNavigatorPlugin extends Plugin {
   }
 
   private unregisterGroupCommands(): void {
-    const commandsApi = (this.app as unknown as { commands?: { removeCommand: (id: string) => void } }).commands;
+    const commandsApi = (
+      this.app as unknown as {
+        commands?: { removeCommand: (id: string) => void };
+      }
+    ).commands;
     if (!commandsApi) {
       this.registeredCommandIds = [];
       return;
@@ -119,24 +155,33 @@ export default class FileNavigatorPlugin extends Plugin {
     this.registeredCommandIds = [];
   }
 
-  private formatGroupCommandLabel(groupLabel: string, direction: GroupCommandDirection): string {
+  private formatGroupCommandLabel(
+    groupLabel: string,
+    direction: GroupCommandDirection,
+  ): string {
     const directionLabel = this.translate(
       direction === 'previous'
         ? 'commands.navigatePrevious'
         : direction === 'next'
-        ? 'commands.navigateNext'
-        : direction === 'latest'
-        ? 'commands.navigateLatest'
-        : 'commands.navigateOldest'
+          ? 'commands.navigateNext'
+          : direction === 'latest'
+            ? 'commands.navigateLatest'
+            : 'commands.navigateOldest',
     );
     return `${groupLabel} • ${directionLabel}`;
   }
 
-  private getGroupCommandBaseId(group: NavigationGroupSetting, direction: GroupCommandDirection): string {
+  private getGroupCommandBaseId(
+    group: NavigationGroupSetting,
+    direction: GroupCommandDirection,
+  ): string {
     return `group-${group.id}-${direction}`;
   }
 
-  private getGroupCommandFullId(group: NavigationGroupSetting, direction: GroupCommandDirection): string {
+  private getGroupCommandFullId(
+    group: NavigationGroupSetting,
+    direction: GroupCommandDirection,
+  ): string {
     return `${this.manifest.id}:${this.getGroupCommandBaseId(group, direction)}`;
   }
 
@@ -152,7 +197,10 @@ export default class FileNavigatorPlugin extends Plugin {
     return this.getTranslator().t(key);
   }
 
-  private async navigate(group: NavigationGroupSetting, direction: NavigationDirection): Promise<void> {
+  private async navigate(
+    group: NavigationGroupSetting,
+    direction: NavigationDirection,
+  ): Promise<void> {
     if (group.rules.length === 0) {
       new Notice(this.translate('notices.groupHasNoRules'));
       return;
@@ -167,8 +215,16 @@ export default class FileNavigatorPlugin extends Plugin {
     await this.handleNavigation(group, activeFile, direction);
   }
 
-  private async handleNavigation(group: NavigationGroupSetting, file: TFile, direction: NavigationDirection): Promise<void> {
-    console.debug('FileNavigatorPlugin', 'navigate', { group: group.id, direction, file: file.path });
+  private async handleNavigation(
+    group: NavigationGroupSetting,
+    file: TFile,
+    direction: NavigationDirection,
+  ): Promise<void> {
+    console.debug('FileNavigatorPlugin', 'navigate', {
+      group: group.id,
+      direction,
+      file: file.path,
+    });
     const target = this.resolveNavigationTarget(group, file, direction);
     if (!target) {
       new Notice(this.translate('notices.noCandidateFound'));
@@ -180,15 +236,25 @@ export default class FileNavigatorPlugin extends Plugin {
     await this.openFile(target);
   }
 
-  private resolveNavigationTarget(group: NavigationGroupSetting, activeFile: TFile, direction: NavigationDirection): TFile | null {
+  private resolveNavigationTarget(
+    group: NavigationGroupSetting,
+    activeFile: TFile,
+    direction: NavigationDirection,
+  ): TFile | null {
     // latest: アクティブファイルを含む最初のルールで最新を選択
     if (direction === 'latest') {
       for (const rule of group.rules) {
-        const candidates = this.sortRuleCandidates(this.collectRuleCandidates(rule), rule);
+        const candidates = this.sortRuleCandidates(
+          this.collectRuleCandidates(rule),
+          rule,
+        );
         if (candidates.length === 0) continue;
-        const currentIndex = candidates.findIndex((item) => item.path === activeFile.path);
+        const currentIndex = candidates.findIndex(
+          (item) => item.path === activeFile.path,
+        );
         if (currentIndex === -1) continue;
-        const targetIndex = rule.sortDirection === 'asc' ? candidates.length - 1 : 0;
+        const targetIndex =
+          rule.sortDirection === 'asc' ? candidates.length - 1 : 0;
         return candidates[targetIndex] ?? null;
       }
       return null;
@@ -197,11 +263,17 @@ export default class FileNavigatorPlugin extends Plugin {
     // oldest: アクティブファイルを含む最初のルールで最古を選択
     if (direction === 'oldest') {
       for (const rule of group.rules) {
-        const candidates = this.sortRuleCandidates(this.collectRuleCandidates(rule), rule);
+        const candidates = this.sortRuleCandidates(
+          this.collectRuleCandidates(rule),
+          rule,
+        );
         if (candidates.length === 0) continue;
-        const currentIndex = candidates.findIndex((item) => item.path === activeFile.path);
+        const currentIndex = candidates.findIndex(
+          (item) => item.path === activeFile.path,
+        );
         if (currentIndex === -1) continue;
-        const targetIndex = rule.sortDirection === 'asc' ? 0 : candidates.length - 1;
+        const targetIndex =
+          rule.sortDirection === 'asc' ? 0 : candidates.length - 1;
         return candidates[targetIndex] ?? null;
       }
       return null;
@@ -209,9 +281,14 @@ export default class FileNavigatorPlugin extends Plugin {
 
     // previous/next: アクティブファイルを含む最初のルールでのみ前後移動（ループしない）
     for (const rule of group.rules) {
-      const candidates = this.sortRuleCandidates(this.collectRuleCandidates(rule), rule);
+      const candidates = this.sortRuleCandidates(
+        this.collectRuleCandidates(rule),
+        rule,
+      );
       if (candidates.length === 0) continue;
-      const currentIndex = candidates.findIndex((item) => item.path === activeFile.path);
+      const currentIndex = candidates.findIndex(
+        (item) => item.path === activeFile.path,
+      );
       if (currentIndex === -1) continue;
       if (direction === 'next') {
         if (currentIndex >= candidates.length - 1) return null;
@@ -222,7 +299,8 @@ export default class FileNavigatorPlugin extends Plugin {
       return candidates[currentIndex - 1];
     }
     return null;
-  }  private collectRuleCandidates(rule: NavigationRuleSetting): TFile[] {
+  }
+  private collectRuleCandidates(rule: NavigationRuleSetting): TFile[] {
     const files = this.app.vault.getMarkdownFiles();
     return files.filter((file) => this.matchesRule(rule, file));
   }
@@ -253,9 +331,14 @@ export default class FileNavigatorPlugin extends Plugin {
     if (!normalized) {
       return true;
     }
-    const withoutSlashes = normalized.replace(/^[/\\\\]+|[/\\\\]+$/g, '').toLowerCase();
+    const withoutSlashes = normalized
+      .replace(/^[/\\\\]+|[/\\\\]+$/g, '')
+      .toLowerCase();
     const fileFolder = (file.parent?.path ?? '').toLowerCase();
-    return fileFolder === withoutSlashes || fileFolder.startsWith(`${withoutSlashes}/`);
+    return (
+      fileFolder === withoutSlashes ||
+      fileFolder.startsWith(`${withoutSlashes}/`)
+    );
   }
 
   private matchesProperty(rule: NavigationRuleSetting, file: TFile): boolean {
@@ -307,7 +390,10 @@ export default class FileNavigatorPlugin extends Plugin {
     return value.replace(/^#+/, '').trim().toLowerCase();
   }
 
-  private sortRuleCandidates(candidates: TFile[], rule: NavigationRuleSetting): TFile[] {
+  private sortRuleCandidates(
+    candidates: TFile[],
+    rule: NavigationRuleSetting,
+  ): TFile[] {
     const sorted = [...candidates];
     sorted.sort((a, b) => this.compareFiles(a, b, rule));
     if (rule.sortDirection === 'desc') {
@@ -316,7 +402,11 @@ export default class FileNavigatorPlugin extends Plugin {
     return sorted;
   }
 
-  private compareFiles(a: TFile, b: TFile, rule: NavigationRuleSetting): number {
+  private compareFiles(
+    a: TFile,
+    b: TFile,
+    rule: NavigationRuleSetting,
+  ): number {
     switch (rule.sortType) {
       case 'modified':
         return a.stat.mtime - b.stat.mtime;
@@ -345,7 +435,10 @@ export default class FileNavigatorPlugin extends Plugin {
     }
   }
 
-  private getFrontmatterSortValue(file: TFile, rule: NavigationRuleSetting): string | number | null {
+  private getFrontmatterSortValue(
+    file: TFile,
+    rule: NavigationRuleSetting,
+  ): string | number | null {
     const key = rule.sortKey?.trim();
     if (!key) {
       return null;
@@ -377,14 +470,19 @@ export default class FileNavigatorPlugin extends Plugin {
 
   getGroupLabel(group: NavigationGroupSetting): string {
     const name = group.name?.trim();
-    return name && name.length > 0 ? name : this.translate('settings.group.titleFallback');
+    return name && name.length > 0
+      ? name
+      : this.translate('settings.group.titleFallback');
   }
 
   getRuleSummary(rule: NavigationRuleSetting): string {
     const missingValue = this.translate('settings.rule.summary.missing');
     switch (rule.filterType) {
       case 'folder':
-        return this.translate('settings.rule.summary.folder').replace('{value}', rule.filterValue?.trim() || missingValue);
+        return this.translate('settings.rule.summary.folder').replace(
+          '{value}',
+          rule.filterValue?.trim() || missingValue,
+        );
       case 'property': {
         const key = rule.propertyKey?.trim() || missingValue;
         const value = rule.propertyValue?.trim();
@@ -393,21 +491,33 @@ export default class FileNavigatorPlugin extends Plugin {
             .replace('{key}', key)
             .replace('{value}', value);
         }
-        return this.translate('settings.rule.summary.propertyWithoutValue').replace('{key}', key);
+        return this.translate(
+          'settings.rule.summary.propertyWithoutValue',
+        ).replace('{key}', key);
       }
       case 'tag':
       default:
-        return this.translate('settings.rule.summary.tag').replace('{value}', rule.filterValue?.trim() || missingValue);
+        return this.translate('settings.rule.summary.tag').replace(
+          '{value}',
+          rule.filterValue?.trim() || missingValue,
+        );
     }
   }
 
-  getGroupCommandDescriptors(group: NavigationGroupSetting): GroupCommandDescriptor[] {
+  getGroupCommandDescriptors(
+    group: NavigationGroupSetting,
+  ): GroupCommandDescriptor[] {
     const label = this.getGroupLabel(group);
-    const directions: GroupCommandDirection[] = ['previous', 'next', 'latest', 'oldest'];
+    const directions: GroupCommandDirection[] = [
+      'previous',
+      'next',
+      'latest',
+      'oldest',
+    ];
     return directions.map((direction) => ({
       direction,
       id: this.getGroupCommandFullId(group, direction),
-      label: this.formatGroupCommandLabel(label, direction)
+      label: this.formatGroupCommandLabel(label, direction),
     }));
   }
 
@@ -468,7 +578,9 @@ export default class FileNavigatorPlugin extends Plugin {
     const onInput = () => {
       const q = input.value.trim().toLowerCase();
       const items = getItems();
-      const filtered = q ? items.filter((x) => x.toLowerCase().includes(q)) : items;
+      const filtered = q
+        ? items.filter((x) => x.toLowerCase().includes(q))
+        : items;
       if (filtered.length === 0) {
         hide();
         return;
@@ -521,20 +633,26 @@ export default class FileNavigatorPlugin extends Plugin {
 
   openHotkeySettings(searchTerm: string): void {
     // Obsidian標準コマンドでホットキー設定を開く（最も互換性が高い）
-    const commandsApi = (this.app as unknown as { commands?: { executeCommandById?: (id: string) => boolean } }).commands;
+    const commandsApi = (
+      this.app as unknown as {
+        commands?: { executeCommandById?: (id: string) => boolean };
+      }
+    ).commands;
     commandsApi?.executeCommandById?.('app:open-hotkeys');
 
     // Templater と同様の方法で、ホットキータブの検索欄へ直接入力する
-    const settingManager = (this.app as unknown as {
-      setting?: {
-        open: () => void;
-        openTabById?: (id: string) => void;
-        activeTab?: {
-          searchComponent?: { inputEl?: HTMLInputElement };
-          updateHotkeyVisibility?: () => void;
+    const settingManager = (
+      this.app as unknown as {
+        setting?: {
+          open: () => void;
+          openTabById?: (id: string) => void;
+          activeTab?: {
+            searchComponent?: { inputEl?: HTMLInputElement };
+            updateHotkeyVisibility?: () => void;
+          };
         };
-      };
-    }).setting;
+      }
+    ).setting;
     if (settingManager) {
       settingManager.open?.();
       settingManager.openTabById?.('hotkeys');
@@ -569,10 +687,16 @@ class FileNavigatorSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl('h2', { text: this.plugin.translate('settings.title') });
-    containerEl.createEl('p', { text: this.plugin.translate('settings.description') });
+    containerEl.createEl('h2', {
+      text: this.plugin.translate('settings.title'),
+    });
+    containerEl.createEl('p', {
+      text: this.plugin.translate('settings.description'),
+    });
 
-    const groupsContainer = containerEl.createDiv({ cls: 'file-navigator-settings__groups' });
+    const groupsContainer = containerEl.createDiv({
+      cls: 'file-navigator-settings__groups',
+    });
     this.renderGroups(groupsContainer);
   }
 
@@ -584,7 +708,7 @@ class FileNavigatorSettingTab extends PluginSettingTab {
     if (groups.length === 0) {
       container.createEl('p', {
         text: this.plugin.translate('settings.groups.empty'),
-        cls: 'file-navigator-settings__empty'
+        cls: 'file-navigator-settings__empty',
       });
     }
 
@@ -606,7 +730,7 @@ class FileNavigatorSettingTab extends PluginSettingTab {
           const newGroup: NavigationGroupSetting = {
             id: createId(),
             name: '',
-            rules: []
+            rules: [],
           };
           this.plugin.settings.groups.push(newGroup);
           await this.plugin.saveSettings();
@@ -615,25 +739,46 @@ class FileNavigatorSettingTab extends PluginSettingTab {
     });
   }
 
-  private renderGroup(parent: HTMLElement, group: NavigationGroupSetting): void {
+  private renderGroup(
+    parent: HTMLElement,
+    group: NavigationGroupSetting,
+  ): void {
     const groupWrapper = parent.createDiv({ cls: 'file-navigator-group' });
-    const headerEl = groupWrapper.createDiv({ cls: 'file-navigator-group__header' });
+    const headerEl = groupWrapper.createDiv({
+      cls: 'file-navigator-group__header',
+    });
     const titleEl = headerEl.createEl('h3', {
       text: this.plugin.getGroupLabel(group),
-      cls: 'file-navigator-group__title'
+      cls: 'file-navigator-group__title',
     });
     // インライン編集用の入力（タイトルの位置に出すため、アクションより先に配置）
-    const nameInput = headerEl.createEl('input', { type: 'text', cls: 'file-navigator-group__name-input' });
-    nameInput.placeholder = this.plugin.translate('settings.group.namePlaceholder');
+    const nameInput = headerEl.createEl('input', {
+      type: 'text',
+      cls: 'file-navigator-group__name-input',
+    });
+    nameInput.placeholder = this.plugin.translate(
+      'settings.group.namePlaceholder',
+    );
     nameInput.value = group.name ?? '';
     nameInput.style.display = 'none';
-    const headerActions = headerEl.createDiv({ cls: 'file-navigator-group__header-actions' });
+    const headerActions = headerEl.createDiv({
+      cls: 'file-navigator-group__header-actions',
+    });
     // 編集トグルボタン
-    const editBtn = headerActions.createEl('button', { text: '✎', cls: 'clickable-icon' });
+    const editBtn = headerActions.createEl('button', {
+      text: '✎',
+      cls: 'clickable-icon',
+    });
     editBtn.setAttr('aria-label', 'Edit');
     // 削除ボタン（右上）
-    const removeBtn = headerActions.createEl('button', { text: '🗑', cls: 'clickable-icon' });
-    removeBtn.setAttr('aria-label', this.plugin.translate('settings.group.removeTooltip'));
+    const removeBtn = headerActions.createEl('button', {
+      text: '🗑',
+      cls: 'clickable-icon',
+    });
+    removeBtn.setAttr(
+      'aria-label',
+      this.plugin.translate('settings.group.removeTooltip'),
+    );
 
     const enterEdit = () => {
       titleEl.style.display = 'none';
@@ -659,9 +804,9 @@ class FileNavigatorSettingTab extends PluginSettingTab {
       if (e.key === 'Escape') void exitEdit(false);
     });
 
-
-    const hotkeysSetting = new Setting(groupWrapper)
-      .setName(this.plugin.translate('settings.group.hotkeysTitle'));
+    const hotkeysSetting = new Setting(groupWrapper).setName(
+      this.plugin.translate('settings.group.hotkeysTitle'),
+    );
 
     let commandDescriptors: GroupCommandDescriptor[] = [];
     const updateHotkeyDescription = (): void => {
@@ -683,21 +828,27 @@ class FileNavigatorSettingTab extends PluginSettingTab {
         .setButtonText(this.plugin.translate('settings.group.hotkeysButton'))
         .onClick(() => {
           const groupLabel = this.plugin.getGroupLabel(group);
-          this.plugin.openHotkeySettings(`${this.plugin.manifest.name}: ${groupLabel}`);
+          this.plugin.openHotkeySettings(
+            `${this.plugin.manifest.name}: ${groupLabel}`,
+          );
         });
     });
 
     removeBtn.addEventListener('click', async () => {
-      this.plugin.settings.groups = this.plugin.settings.groups.filter((item) => item.id !== group.id);
+      this.plugin.settings.groups = this.plugin.settings.groups.filter(
+        (item) => item.id !== group.id,
+      );
       await this.plugin.saveSettings();
       this.display();
     });
 
-    const rulesContainer = groupWrapper.createDiv({ cls: 'file-navigator-group__rules' });
+    const rulesContainer = groupWrapper.createDiv({
+      cls: 'file-navigator-group__rules',
+    });
     if (group.rules.length === 0) {
       rulesContainer.createEl('p', {
         text: this.plugin.translate('settings.rules.empty'),
-        cls: 'file-navigator-rules__empty'
+        cls: 'file-navigator-rules__empty',
       });
     }
 
@@ -721,7 +872,7 @@ class FileNavigatorSettingTab extends PluginSettingTab {
             filterType: 'tag',
             filterValue: '',
             sortType: 'created',
-            sortDirection: 'asc'
+            sortDirection: 'asc',
           };
           group.rules.push(newRule);
           await this.plugin.saveSettings();
@@ -730,34 +881,60 @@ class FileNavigatorSettingTab extends PluginSettingTab {
     });
   }
 
-  private renderRule(container: HTMLElement, group: NavigationGroupSetting, rule: NavigationRuleSetting): void {
+  private renderRule(
+    container: HTMLElement,
+    group: NavigationGroupSetting,
+    rule: NavigationRuleSetting,
+  ): void {
     const ruleWrapper = container.createDiv({ cls: 'file-navigator-rule' });
-    const header = ruleWrapper.createDiv({ cls: 'file-navigator-rule__header' });
+    const header = ruleWrapper.createDiv({
+      cls: 'file-navigator-rule__header',
+    });
     const titleEl = header.createEl('div', {
       text: this.plugin.getRuleSummary(rule),
-      cls: 'file-navigator-rule__title sr-only'
+      cls: 'file-navigator-rule__title sr-only',
     });
-    const headerActions = header.createDiv({ cls: 'file-navigator-rule__header-actions' });
+    const headerActions = header.createDiv({
+      cls: 'file-navigator-rule__header-actions',
+    });
     const index = group.rules.findIndex((item) => item.id === rule.id);
     const isFirst = index <= 0;
     const isLast = index >= group.rules.length - 1;
 
-    const moveUpBtn = headerActions.createEl('button', { text: '↑', cls: 'clickable-icon' });
-    moveUpBtn.setAttr('aria-label', this.plugin.translate('settings.rule.moveUp'));
+    const moveUpBtn = headerActions.createEl('button', {
+      text: '↑',
+      cls: 'clickable-icon',
+    });
+    moveUpBtn.setAttr(
+      'aria-label',
+      this.plugin.translate('settings.rule.moveUp'),
+    );
     moveUpBtn.disabled = isFirst;
     moveUpBtn.addEventListener('click', async () => {
       await this.moveRule(group, rule, -1);
     });
 
-    const moveDownBtn = headerActions.createEl('button', { text: '↓', cls: 'clickable-icon' });
-    moveDownBtn.setAttr('aria-label', this.plugin.translate('settings.rule.moveDown'));
+    const moveDownBtn = headerActions.createEl('button', {
+      text: '↓',
+      cls: 'clickable-icon',
+    });
+    moveDownBtn.setAttr(
+      'aria-label',
+      this.plugin.translate('settings.rule.moveDown'),
+    );
     moveDownBtn.disabled = isLast;
     moveDownBtn.addEventListener('click', async () => {
       await this.moveRule(group, rule, 1);
     });
 
-    const removeIconBtn = headerActions.createEl('button', { text: '🗑', cls: 'clickable-icon' });
-    removeIconBtn.setAttr('aria-label', this.plugin.translate('settings.rule.removeButtonTooltip'));
+    const removeIconBtn = headerActions.createEl('button', {
+      text: '🗑',
+      cls: 'clickable-icon',
+    });
+    removeIconBtn.setAttr(
+      'aria-label',
+      this.plugin.translate('settings.rule.removeButtonTooltip'),
+    );
     removeIconBtn.addEventListener('click', async () => {
       group.rules = group.rules.filter((item) => item.id !== rule.id);
       await this.plugin.saveSettings();
@@ -769,9 +946,18 @@ class FileNavigatorSettingTab extends PluginSettingTab {
       .setDesc(this.plugin.translate('settings.rule.filterDesc'));
 
     filterSetting.addDropdown((dropdown) => {
-      dropdown.addOption('tag', this.plugin.translate('settings.rule.filter.tag'));
-      dropdown.addOption('folder', this.plugin.translate('settings.rule.filter.folder'));
-      dropdown.addOption('property', this.plugin.translate('settings.rule.filter.property'));
+      dropdown.addOption(
+        'tag',
+        this.plugin.translate('settings.rule.filter.tag'),
+      );
+      dropdown.addOption(
+        'folder',
+        this.plugin.translate('settings.rule.filter.folder'),
+      );
+      dropdown.addOption(
+        'property',
+        this.plugin.translate('settings.rule.filter.property'),
+      );
       dropdown.setValue(rule.filterType);
       dropdown.onChange(async (value) => {
         const nextType = value as RuleFilterType;
@@ -798,7 +984,9 @@ class FileNavigatorSettingTab extends PluginSettingTab {
 
       filterValueSetting.addText((text) => {
         text
-          .setPlaceholder(this.plugin.translate('settings.rule.filterValueTagPlaceholder'))
+          .setPlaceholder(
+            this.plugin.translate('settings.rule.filterValueTagPlaceholder'),
+          )
           .setValue(rule.filterValue)
           .onChange(async (value) => {
             rule.filterValue = value;
@@ -815,7 +1003,9 @@ class FileNavigatorSettingTab extends PluginSettingTab {
 
       filterValueSetting.addText((text) => {
         text
-          .setPlaceholder(this.plugin.translate('settings.rule.filterValueFolderPlaceholder'))
+          .setPlaceholder(
+            this.plugin.translate('settings.rule.filterValueFolderPlaceholder'),
+          )
           .setValue(rule.filterValue)
           .onChange(async (value) => {
             rule.filterValue = value;
@@ -823,7 +1013,9 @@ class FileNavigatorSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           });
         // フォルダ候補のサジェスト
-        this.plugin.attachTextSuggest(text, () => this.plugin.collectAllFolders());
+        this.plugin.attachTextSuggest(text, () =>
+          this.plugin.collectAllFolders(),
+        );
       });
     } else {
       const propertyKeySetting = new Setting(ruleWrapper)
@@ -832,7 +1024,9 @@ class FileNavigatorSettingTab extends PluginSettingTab {
 
       propertyKeySetting.addText((text) => {
         text
-          .setPlaceholder(this.plugin.translate('settings.rule.propertyKeyPlaceholder'))
+          .setPlaceholder(
+            this.plugin.translate('settings.rule.propertyKeyPlaceholder'),
+          )
           .setValue(rule.propertyKey ?? '')
           .onChange(async (value) => {
             rule.propertyKey = value;
@@ -840,7 +1034,9 @@ class FileNavigatorSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           });
         // フロントマターキーのサジェスト
-        this.plugin.attachTextSuggest(text, () => this.plugin.collectAllFrontmatterKeys());
+        this.plugin.attachTextSuggest(text, () =>
+          this.plugin.collectAllFrontmatterKeys(),
+        );
       });
 
       const propertyValueSetting = new Setting(ruleWrapper)
@@ -849,7 +1045,9 @@ class FileNavigatorSettingTab extends PluginSettingTab {
 
       propertyValueSetting.addText((text) => {
         text
-          .setPlaceholder(this.plugin.translate('settings.rule.propertyValuePlaceholder'))
+          .setPlaceholder(
+            this.plugin.translate('settings.rule.propertyValuePlaceholder'),
+          )
           .setValue(rule.propertyValue ?? '')
           .onChange(async (value) => {
             rule.propertyValue = value;
@@ -864,10 +1062,22 @@ class FileNavigatorSettingTab extends PluginSettingTab {
       .setDesc(this.plugin.translate('settings.rule.sortDesc'));
 
     sortSetting.addDropdown((dropdown) => {
-      dropdown.addOption('created', this.plugin.translate('settings.rule.sort.created'));
-      dropdown.addOption('modified', this.plugin.translate('settings.rule.sort.modified'));
-      dropdown.addOption('filename', this.plugin.translate('settings.rule.sort.filename'));
-      dropdown.addOption('frontmatter', this.plugin.translate('settings.rule.sort.frontmatter'));
+      dropdown.addOption(
+        'created',
+        this.plugin.translate('settings.rule.sort.created'),
+      );
+      dropdown.addOption(
+        'modified',
+        this.plugin.translate('settings.rule.sort.modified'),
+      );
+      dropdown.addOption(
+        'filename',
+        this.plugin.translate('settings.rule.sort.filename'),
+      );
+      dropdown.addOption(
+        'frontmatter',
+        this.plugin.translate('settings.rule.sort.frontmatter'),
+      );
       dropdown.setValue(rule.sortType);
       dropdown.onChange(async (value) => {
         const nextSort = value as SortType;
@@ -889,8 +1099,14 @@ class FileNavigatorSettingTab extends PluginSettingTab {
       .setDesc(this.plugin.translate('settings.rule.sortDirectionDesc'));
 
     directionSetting.addDropdown((dropdown) => {
-      dropdown.addOption('asc', this.plugin.translate('settings.rule.sortDirection.asc'));
-      dropdown.addOption('desc', this.plugin.translate('settings.rule.sortDirection.desc'));
+      dropdown.addOption(
+        'asc',
+        this.plugin.translate('settings.rule.sortDirection.asc'),
+      );
+      dropdown.addOption(
+        'desc',
+        this.plugin.translate('settings.rule.sortDirection.desc'),
+      );
       dropdown.setValue(rule.sortDirection);
       dropdown.onChange(async (value) => {
         rule.sortDirection = value as 'asc' | 'desc';
@@ -905,14 +1121,18 @@ class FileNavigatorSettingTab extends PluginSettingTab {
 
       keySetting.addText((text) => {
         text
-          .setPlaceholder(this.plugin.translate('settings.rule.sortKeyPlaceholder'))
+          .setPlaceholder(
+            this.plugin.translate('settings.rule.sortKeyPlaceholder'),
+          )
           .setValue(rule.sortKey ?? '')
           .onChange(async (value) => {
             rule.sortKey = value;
             await this.plugin.saveSettings();
           });
         // 並び替えキーにも同様のサジェスト
-        this.plugin.attachTextSuggest(text, () => this.plugin.collectAllFrontmatterKeys());
+        this.plugin.attachTextSuggest(text, () =>
+          this.plugin.collectAllFrontmatterKeys(),
+        );
       });
 
       const valueTypeSetting = new Setting(ruleWrapper)
@@ -920,9 +1140,18 @@ class FileNavigatorSettingTab extends PluginSettingTab {
         .setDesc(this.plugin.translate('settings.rule.sortValueTypeDesc'));
 
       valueTypeSetting.addDropdown((dropdown) => {
-        dropdown.addOption('string', this.plugin.translate('settings.rule.sortValueType.string'));
-        dropdown.addOption('number', this.plugin.translate('settings.rule.sortValueType.number'));
-        dropdown.addOption('date', this.plugin.translate('settings.rule.sortValueType.date'));
+        dropdown.addOption(
+          'string',
+          this.plugin.translate('settings.rule.sortValueType.string'),
+        );
+        dropdown.addOption(
+          'number',
+          this.plugin.translate('settings.rule.sortValueType.number'),
+        );
+        dropdown.addOption(
+          'date',
+          this.plugin.translate('settings.rule.sortValueType.date'),
+        );
         dropdown.setValue(rule.sortValueType ?? 'string');
         dropdown.onChange(async (value) => {
           rule.sortValueType = value as SortValueType;
@@ -930,10 +1159,13 @@ class FileNavigatorSettingTab extends PluginSettingTab {
         });
       });
     }
-
   }
 
-  private async moveRule(group: NavigationGroupSetting, rule: NavigationRuleSetting, delta: number): Promise<void> {
+  private async moveRule(
+    group: NavigationGroupSetting,
+    rule: NavigationRuleSetting,
+    delta: number,
+  ): Promise<void> {
     const currentIndex = group.rules.findIndex((item) => item.id === rule.id);
     const nextIndex = currentIndex + delta;
     if (currentIndex < 0 || nextIndex < 0 || nextIndex >= group.rules.length) {
@@ -945,14 +1177,3 @@ class FileNavigatorSettingTab extends PluginSettingTab {
     this.display();
   }
 }
-
-
-
-
-
-
-
-
-
-
-

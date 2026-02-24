@@ -7,7 +7,7 @@ import type { App } from 'obsidian';
 const createApp = (config: Record<string, unknown>): App => {
   return new (class {
     vault = {
-      getConfig: (key: string) => config[key]
+      getConfig: (key: string) => config[key],
     };
   })() as unknown as App;
 };

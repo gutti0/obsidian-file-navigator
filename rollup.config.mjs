@@ -14,7 +14,7 @@ export default defineConfig({
     entryFileNames: 'main.js',
     format: 'cjs',
     sourcemap: !isProduction,
-    exports: 'default'
+    exports: 'default',
   },
   external: ['obsidian', 'electron', 'fs', 'path', 'os', 'crypto'],
   plugins: [
@@ -24,20 +24,20 @@ export default defineConfig({
     typescript({
       tsconfig: './tsconfig.json',
       sourceMap: !isProduction,
-      inlineSources: !isProduction
+      inlineSources: !isProduction,
     }),
     copy({
       targets: [
         { src: 'manifest.json', dest: 'build' },
-        { src: 'styles.css', dest: 'build' }
+        { src: 'styles.css', dest: 'build' },
       ],
-      copyOnce: false
-    })
+      copyOnce: false,
+    }),
   ],
   onwarn(warning, warn) {
     if (warning.code === 'THIS_IS_UNDEFINED') {
       return;
     }
     warn(warning);
-  }
+  },
 });

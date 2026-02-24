@@ -4,7 +4,7 @@ import ja from './locales/ja.json';
 
 const dictionaries = {
   en,
-  ja
+  ja,
 } as const;
 
 export type LocaleCode = keyof typeof dictionaries;
@@ -28,7 +28,9 @@ export const resolveLocale = (value?: string | LocaleCode): LocaleCode => {
 };
 
 export const readAppLocale = (app: App): string | undefined => {
-  const vault = (app as unknown as { vault?: { getConfig?: (key: string) => unknown } }).vault;
+  const vault = (
+    app as unknown as { vault?: { getConfig?: (key: string) => unknown } }
+  ).vault;
   if (vault?.getConfig) {
     const directLocale = vault.getConfig('locale');
     if (typeof directLocale === 'string') {
@@ -39,7 +41,9 @@ export const readAppLocale = (app: App): string | undefined => {
       return language;
     }
   }
-  const maybeMoment = (window as unknown as { moment?: { locale?: () => string } }).moment;
+  const maybeMoment = (
+    window as unknown as { moment?: { locale?: () => string } }
+  ).moment;
   if (typeof maybeMoment?.locale === 'function') {
     return maybeMoment.locale();
   }

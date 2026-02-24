@@ -11,13 +11,13 @@ export default defineConfig({
     setupFiles: ['tests/setup.ts'],
     coverage: {
       reporter: ['text', 'lcov'],
-      exclude: ['tests/**/*']
-    }
+      exclude: ['tests/**/*'],
+    },
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
-      obsidian: path.resolve(__dirname, 'tests/mocks/obsidian.ts')
-    }
-  }
+      obsidian: path.resolve(__dirname, 'tests/mocks/obsidian.ts'),
+    },
+  },
 });
