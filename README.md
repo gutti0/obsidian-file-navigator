@@ -1,5 +1,7 @@
 # obsidian-file-navigator
 
+日本語 | [English](./README.en.md)
+
 ## 概要 / Overview
 
 - アクティブなノートを基準に、タグやフォルダ、frontmatter などの条件でファイルを絞り込んで移動する Obsidian プラグインです。
